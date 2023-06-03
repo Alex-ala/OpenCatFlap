@@ -17,13 +17,15 @@ namespace OCFFlapControl {
         uint64_t last_change_in;
         uint64_t last_change_out;
     };
-    Servo servo_in;
-    Servo servo_out;
-    FlapState flapState;
+    extern Servo servo_in;
+    extern Servo servo_out;
+    extern FlapState flapState;
 
     void init();
     void moveServo(Direction direction, int angle);
     void setLockState(Direction direction, State state);
     Direction detectMotion(int timeout);
+    void closeAutomatically();
+    void loop(void* parameters);
 };
 #endif // __OCFFLAPCONTROL_H__

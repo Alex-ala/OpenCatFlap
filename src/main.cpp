@@ -2,13 +2,17 @@
 #include <OCFFilesystem.h>
 #include <OCFWifi.h>
 #include <OCFWebserver.h>
+#include <OCFFlapControl.h>
 
 void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   OCFFilesystem::initSPIFFS();
-  OCFWifi::init();  // start flap task
+  // start flap task
+  OCFFlapControl::init();
+  xTaskCreate(OCFFlapControl::loop, "flapcontrol", 10000, NULL, 1, NULL);
   // start Wifi monitor task  
+  OCFWifi::init();  
   xTaskCreate(OCFWifi::monitorWifi,"monitorwifi",2500,NULL, 2, NULL);
   // start Webserver task
   OCFWebserver::init();

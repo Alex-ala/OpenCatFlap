@@ -2,6 +2,7 @@
 #include <OCFFilesystem.h>
 #include <OCFWifi.h>
 #include <definitions.h>
+#include <OCFFlapControl.h>
 
 namespace OCFWebserver{
     WebServer server(80);
@@ -19,7 +20,12 @@ namespace OCFWebserver{
 
     void handle_debug(){
         log_d("Received request on /debug");
-        server.send(200, "text/html", "deubg");
+        if(OCFFlapControl::flapState.allow_in){
+            OCFFlapControl::flapState.allow_in = false;
+        }else{
+            OCFFlapControl::flapState.allow_in = true;
+        }
+        server.send(200, "text/html", "debug");
     }
     void handle_api_get(){
         log_d("Received GET request on /api");
