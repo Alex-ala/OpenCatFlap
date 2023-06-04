@@ -6,7 +6,7 @@
 #include <definitions.h>
 
 namespace OCFFlapControl {
-    enum Direction { IN, OUT, NONE };
+    enum Direction { IN, OUT, NONE, BOTH };
     enum State { LOCKED, UNLOCKED };
     struct FlapState {
         State state_lock_in;
@@ -16,12 +16,16 @@ namespace OCFFlapControl {
         uint64_t last_activity;
         uint64_t last_change_in;
         uint64_t last_change_out;
+        bool servosAttached;
     };
     extern Servo servo_in;
     extern Servo servo_out;
     extern FlapState flapState;
 
     void init();
+    void deinit();
+    void enableServos();
+    void disableServos();
     void moveServo(Direction direction, int angle);
     void setLockState(Direction direction, State state);
     Direction detectMotion(int timeout);
