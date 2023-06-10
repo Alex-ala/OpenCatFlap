@@ -28,7 +28,8 @@ namespace OCFFlapControl {
     void disableServos();
     void moveServo(Direction direction, int angle);
     void setLockState(Direction direction, State state);
-    Direction detectMotion(int timeout);
+    void setAllowState(Direction direction, bool allowed);
+    Direction detectMotion();
     void closeAutomatically();
     void loop(void* parameters);
 };

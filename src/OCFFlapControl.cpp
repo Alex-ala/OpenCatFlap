@@ -57,15 +57,25 @@ namespace OCFFlapControl {
             } 
         }
     }
-    Direction detectMotion(int timeout){
-        if(!flapState.allow_in && !flapState.allow_out) return Direction::NONE;
+    void setAllowState(Direction direction, bool allowed){
+        setLockState(direction, State::LOCKED);
+        if (direction == Direction::IN || direction == Direction::BOTH){
+            flapState.allow_in = allowed;
+        }
+        if (direction == Direction::OUT || direction == Direction::BOTH)
+        {
+            flapState.allow_out = allowed;
+        }        
+    }
+    Direction detectMotion(){
         int motion_inside = digitalRead(OCF_MONTION_INSIDE_PIN);
         int motion_outside = digitalRead(OCF_MONTION_OUTSIDE_PIN);
-        log_d("Motion values (inside/outside): (%d/%d)", motion_inside, motion_outside);
-        // check motion in if allowed_out
-        // check motion out if allowed_in
-        delayMicroseconds(timeout);
-        flapState.last_activity = millis();
+        if (motion_inside == 1 || motion_outside == 1){
+            flapState.last_activity = millis();
+        }
+        if (motion_inside == 1 && motion_outside == 1) return Direction::BOTH;
+        if (motion_inside == 1) return Direction::OUT;
+        if (motion_outside == 1) return Direction::IN;
         return Direction::NONE;
     }
 
@@ -109,15 +119,16 @@ namespace OCFFlapControl {
     void loop(void* parameter){
         while(true){
             closeAutomatically();
-            Direction d = detectMotion(100);
+            Direction d = detectMotion();
             if(d == Direction::NONE){
                 continue;
             }
-            // TMP code for now
-            if(flapState.allow_in){
-                setLockState(d, State::UNLOCKED);
+            if (d == Direction::IN){
+                if (flapState.allow_in) setLockState(d, State::UNLOCKED);
             }
-
+            if (d == Direction::OUT){
+                if (flapState.allow_out) setLockState(d, State::UNLOCKED);
+            }
         }
     }
 }

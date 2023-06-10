@@ -2,7 +2,6 @@
 #include <OCFFilesystem.h>
 #include <OCFWifi.h>
 #include <definitions.h>
-#include <OCFFlapControl.h>
 
 namespace OCFWebserver{
     WebServer server(80);
@@ -56,13 +55,31 @@ namespace OCFWebserver{
             server.send(400, "text/html", "data json missing command field");
             return;
         }
-        if(doc["command"] == "wifi_config"){
+        if(doc["command"] == "wifiConfig"){
             log_d("configuring wifi...");
             OCFWifi::configure(doc);
             log_d("configured wifi, reconnecting to wifi...");
             OCFWifi::reconnect();
+        }else if (doc["command"] == "setAllowState")
+        {
+            if (!doc.containsKey("direction") || !doc.containsKey("allowed")){
+                log_d("data json missing direction or allowed field: %s", data);
+                server.send(400, "text/html", "data json missing direction or allowed field");
+                return;
+            }
+            OCFFlapControl::Direction direction = parseDirection(doc["direction"].as<String>());
+            OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
         }
+        
         server.send(200, "text/html", "api post");
+    }
+
+    OCFFlapControl::Direction parseDirection(String direction){
+        if (direction == "in") return OCFFlapControl::Direction::IN;
+        if (direction == "out") return OCFFlapControl::Direction::OUT;
+        if (direction == "both") return OCFFlapControl::Direction::BOTH;
+        log_d("Failed to parse direction %s", direction);
+        return OCFFlapControl::Direction::NONE;
     }
 
     void loop(void* parameter){
