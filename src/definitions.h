@@ -13,3 +13,4 @@
 #define OCF_CLOSE_AFTER_MS 2000
 #define OCF_DISABLE_SERVOS_AFTER_MS 30000
 
+#define OCF_PATHS_FLAP_STATE "/flapState.json"

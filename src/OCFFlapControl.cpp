@@ -6,6 +6,7 @@ namespace OCFFlapControl {
     FlapState flapState;
 
     void init(){
+        loadState();
         enableServos();
         pinMode(OCF_MONTION_INSIDE_PIN, INPUT);
         pinMode(OCF_MONTION_OUTSIDE_PIN, INPUT);
@@ -65,7 +66,27 @@ namespace OCFFlapControl {
         if (direction == Direction::OUT || direction == Direction::BOTH)
         {
             flapState.allow_out = allowed;
-        }        
+        }    
+        persistState();    
+    }
+    void persistState(){
+        DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
+        doc["allow_out"] = flapState.allow_out;
+        doc["allow_in"] = flapState.allow_in;
+        OCFFilesystem::writeJsonFile(OCF_PATHS_FLAP_STATE, doc);
+        doc.clear();
+    }
+    void loadState(){
+        StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
+        bool loaded = OCFFilesystem::readJsonFile(OCF_PATHS_FLAP_STATE, doc);
+        if (!loaded){
+            log_d("Failed to load state");
+            return;
+        }
+        if (doc.containsKey("allow_out")) OCFFlapControl::flapState.allow_out = doc["allow_out"].as<bool>();
+        if (doc.containsKey("allow_in")) OCFFlapControl::flapState.allow_in = doc["allow_in"].as<bool>();
+        doc.clear();
+        log_d("Loaded flap state. (%d, %d)", flapState.allow_in, flapState.allow_out);
     }
     Direction detectMotion(){
         int motion_inside = digitalRead(OCF_MONTION_INSIDE_PIN);

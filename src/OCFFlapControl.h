@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include <definitions.h>
+#include <ArduinoJson.h>
+#include <OCFFilesystem.h>
 
 namespace OCFFlapControl {
     enum Direction { IN, OUT, NONE, BOTH };
@@ -29,6 +31,8 @@ namespace OCFFlapControl {
     void moveServo(Direction direction, int angle);
     void setLockState(Direction direction, State state);
     void setAllowState(Direction direction, bool allowed);
+    void persistState();
+    void loadState();
     Direction detectMotion();
     void closeAutomatically();
     void loop(void* parameters);

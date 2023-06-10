@@ -24,6 +24,7 @@ namespace OCFWifi {
         if(doc.containsKey("ip")) config.ip = doc["ip"].as<String>();
         if(doc.containsKey("gateway")) config.gateway = doc["gateway"].as<String>();
         if(doc.containsKey("netmask")) config.netmask = doc["netmask"].as<String>();
+        OCFFilesystem::writeJsonFile(CONFIG_FILE, doc);
         doc.clear();
         configured = true;
     }
