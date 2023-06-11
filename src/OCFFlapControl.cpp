@@ -6,6 +6,7 @@ namespace OCFFlapControl {
     FlapState flapState;
 
     void init(){
+        log_d("Initializing Flapcontrol");
         loadState();
         enableServos();
         pinMode(OCF_MONTION_INSIDE_PIN, INPUT);
@@ -81,6 +82,13 @@ namespace OCFFlapControl {
         bool loaded = OCFFilesystem::readJsonFile(OCF_PATHS_FLAP_STATE, doc);
         if (!loaded){
             log_d("Failed to load state");
+            flapState.last_activity = millis();
+            flapState.last_change_in = millis();
+            flapState.last_change_out = millis();
+            flapState.allow_in = false;
+            flapState.allow_out = false;
+            flapState.state_lock_in = State::UNLOCKED;
+            flapState.state_lock_out = State::UNLOCKED;
             return;
         }
         if (doc.containsKey("allow_out")) OCFFlapControl::flapState.allow_out = doc["allow_out"].as<bool>();
@@ -143,13 +151,16 @@ namespace OCFFlapControl {
             Direction d = detectMotion();
             if(d == Direction::NONE){
                 continue;
+            }else{
+                if (d == Direction::IN){
+                    if (flapState.allow_in) setLockState(d, State::UNLOCKED);
+                }
+                if (d == Direction::OUT){
+                    if (flapState.allow_out) setLockState(d, State::UNLOCKED);
+                }
             }
-            if (d == Direction::IN){
-                if (flapState.allow_in) setLockState(d, State::UNLOCKED);
-            }
-            if (d == Direction::OUT){
-                if (flapState.allow_out) setLockState(d, State::UNLOCKED);
-            }
+            vTaskDelay(1);
+
         }
     }
 }

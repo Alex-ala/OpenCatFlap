@@ -8,18 +8,17 @@ namespace OCFWifi {
     // Load Wifi settings, create a configuration object and initalize state variables
     void init() {
         StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
-        OCFFilesystem::readJsonFile(CONFIG_FILE, doc);
-        configure(doc);
-        if(config.ssid==""){
+        bool file_read = OCFFilesystem::readJsonFile(CONFIG_FILE, doc);
+        if (configure(doc)){
+            connected = connectWifi();
+        }else{
             configured = false;
             setupAP();
-        }else{
-            connected = connectWifi();
         }
     }
 
-    void configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
-        if(doc.containsKey("ssid")) config.ssid = doc["ssid"].as<String>();
+    bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
+        if(doc.containsKey("ssid")) config.ssid = doc["ssid"].as<String>(); else return false;
         if(doc.containsKey("passphrase")) config.passphrase = doc["passphrase"].as<String>();
         if(doc.containsKey("ip")) config.ip = doc["ip"].as<String>();
         if(doc.containsKey("gateway")) config.gateway = doc["gateway"].as<String>();
@@ -27,6 +26,7 @@ namespace OCFWifi {
         OCFFilesystem::writeJsonFile(CONFIG_FILE, doc);
         doc.clear();
         configured = true;
+        return configured;
     }
 
 

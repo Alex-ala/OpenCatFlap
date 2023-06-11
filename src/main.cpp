@@ -10,13 +10,13 @@ void setup() {
   OCFFilesystem::initSPIFFS();
   // start flap task
   OCFFlapControl::init();
-  xTaskCreate(OCFFlapControl::loop, "flapcontrol", 10000, NULL, 1, NULL);
+  xTaskCreate(OCFFlapControl::loop, "flapcontrol", 10000, NULL, 3, NULL);
   // start Wifi monitor task  
   OCFWifi::init();  
   xTaskCreate(OCFWifi::monitorWifi,"monitorwifi",2500,NULL, 2, NULL);
   // start Webserver task
   OCFWebserver::init();
-  xTaskCreate(OCFWebserver::loop, "webserver", 10000, NULL, 3, NULL);
+  xTaskCreate(OCFWebserver::loop, "webserver", 10000, NULL, 2, NULL);
 }
 
 void loop() {

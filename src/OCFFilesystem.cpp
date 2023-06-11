@@ -8,6 +8,7 @@ namespace OCFFilesystem{
         log_d("SPIFFS mounted successfully");
     }
     bool readJsonFile(const char* path, StaticJsonDocument<OCF_MAX_JSON_SIZE>& outRef){
+        log_d("Reading %s...", path);
         fs::FS &fs = SPIFFS;
         File file = fs.open(path, FILE_READ);
         if(!file || file.isDirectory()){
@@ -20,6 +21,7 @@ namespace OCFFilesystem{
             log_d("Failed to parse %s: %s", path, err.c_str());
             return false;
         }
+        log_d("Successfully read %s", path);
         return true;
     }
 

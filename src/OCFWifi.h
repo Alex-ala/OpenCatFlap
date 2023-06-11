@@ -19,7 +19,7 @@ namespace OCFWifi{
     extern bool configured;
     extern WifiConfiguration config;
 
-    void configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
+    bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
     void init();
     void setupAP();
     bool connectWifi();

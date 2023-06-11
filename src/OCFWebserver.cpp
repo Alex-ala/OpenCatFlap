@@ -58,6 +58,7 @@ namespace OCFWebserver{
         if(doc["command"] == "wifiConfig"){
             log_d("configuring wifi...");
             OCFWifi::configure(doc);
+            server.send(202, "text/html", "Configuring wifi...");
             log_d("configured wifi, reconnecting to wifi...");
             OCFWifi::reconnect();
         }else if (doc["command"] == "setAllowState")
