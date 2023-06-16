@@ -36,7 +36,7 @@ namespace OCFFlapControl {
     void persistState();
     void loadState();
     Direction detectMotion();
-    void closeAutomatically();
+    void closeAutomatically(Direction d);
     void loop(void* parameters);
     void getFlapStateJson(String& strOut);
 };

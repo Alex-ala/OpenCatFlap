@@ -11,8 +11,8 @@ namespace OCFFlapControl {
         log_d("Initializing Flapcontrol");
         loadState();
         enableServos();
-        pinMode(OCF_MONTION_INSIDE_PIN, INPUT);
-        pinMode(OCF_MONTION_OUTSIDE_PIN, INPUT);
+        pinMode(OCF_MOTION_INSIDE_PIN, INPUT);
+        pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT);
         pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
         count_motion_inside = 0;
         count_motion_outside = 0;
@@ -47,7 +47,6 @@ namespace OCFFlapControl {
     }
     void setLockState(Direction direction, State state){
         if(direction == Direction::IN){
-            flapState.last_change_in = millis();
             flapState.state_lock_in = state;
             if(state == State::UNLOCKED){
                 moveServo(direction, OCF_SERVO_IN_UNLOCKED);
@@ -55,7 +54,6 @@ namespace OCFFlapControl {
                 moveServo(direction, OCF_SERVO_IN_LOCKED);
             }
         }else if(direction == Direction::OUT){
-            flapState.last_change_out = millis();
             flapState.state_lock_out = state;
             if(state == State::UNLOCKED){
                 moveServo(direction, OCF_SERVO_OUT_UNLOCKED);
@@ -102,23 +100,23 @@ namespace OCFFlapControl {
         log_d("Loaded flap state. (%d, %d)", flapState.allow_in, flapState.allow_out);
     }
     Direction detectMotion(){
-        int motion_inside = digitalRead(OCF_MONTION_INSIDE_PIN);
-        int motion_outside = digitalRead(OCF_MONTION_OUTSIDE_PIN);
+        int motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN);
+        int motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN);
         if (motion_inside == 1 || motion_outside == 1){
             flapState.last_activity = millis();
         }
-        if (count_motion_inside > INT_MAX - 100) count_motion_inside = 100;
-        if (count_motion_outside > INT_MAX - 100) count_motion_outside = 100;
+        if (count_motion_inside > INT_MAX - OCF_MOTION_DELAY) count_motion_inside = OCF_MOTION_DELAY;
+        if (count_motion_outside > INT_MAX - OCF_MOTION_DELAY) count_motion_outside = OCF_MOTION_DELAY;
         if (motion_inside == 1) count_motion_inside++;
         if (motion_outside == 1) count_motion_outside++;
 
-        if (count_motion_inside > 100  && motion_inside == 1 && count_motion_outside > 100 && motion_outside == 1) return Direction::BOTH;
-        if (count_motion_inside > 100 && motion_inside == 1) return Direction::OUT;
-        if (count_motion_outside > 100 && motion_outside == 1) return Direction::IN;
+        if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside == 1 && count_motion_outside > OCF_MOTION_DELAY && motion_outside == 1) return Direction::BOTH;
+        if (count_motion_inside > OCF_MOTION_DELAY && motion_inside == 1) return Direction::OUT;
+        if (count_motion_outside > OCF_MOTION_DELAY && motion_outside == 1) return Direction::IN;
         return Direction::NONE;
     }
 
-    void closeAutomatically(){
+    void closeAutomatically(Direction d){
         unsigned long time = millis();
         unsigned long diff = 0;
 
@@ -173,18 +171,32 @@ namespace OCFFlapControl {
     }
     
     void loop(void* parameter){
+        unsigned long previous_millis = millis();
+        unsigned long current_millis = 0;
         while(true){
-            closeAutomatically();
+            current_millis = millis();
+            if (previous_millis == current_millis){
+                vTaskDelay(1);
+                continue;
+            }
+            previous_millis = current_millis;
             Direction d = detectMotion();
+            closeAutomatically(d);
             if(d == Direction::NONE){
                 vTaskDelay(1);
                 continue;
             }else{
-                if (d == Direction::IN && flapState.state_lock_in == State::LOCKED){
-                    if (flapState.allow_in) setLockState(d, State::UNLOCKED);
+                if (d == Direction::IN){
+                    if (flapState.allow_in) {
+                        flapState.last_change_in = millis();
+                        if(flapState.state_lock_in == State::LOCKED) setLockState(d, State::UNLOCKED);
+                    }
                 }
-                if (d == Direction::OUT && flapState.state_lock_out == State::LOCKED){
-                    if (flapState.allow_out) setLockState(d, State::UNLOCKED);
+                if (d == Direction::OUT){
+                    if (flapState.allow_out) {
+                        flapState.last_change_out = millis();
+                        if (flapState.state_lock_out == State::LOCKED) setLockState(d, State::UNLOCKED);
+                    }
                 }
             }
             vTaskDelay(1);
