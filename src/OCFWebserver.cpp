@@ -70,6 +70,11 @@ namespace OCFWebserver{
             }
             OCFFlapControl::Direction direction = parseDirection(doc["direction"].as<String>());
             OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
+        }else if (doc["command"] == "status"){
+            String str;
+            OCFFlapControl::getFlapStateJson(str);
+            server.send(200, "application/json", str);
+            return;
         }
         
         server.send(200, "text/html", "api post");

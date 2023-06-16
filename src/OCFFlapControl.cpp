@@ -4,6 +4,8 @@ namespace OCFFlapControl {
     Servo servo_in;
     Servo servo_out;
     FlapState flapState;
+    int count_motion_inside = 0;
+    int count_motion_outside = 0;
 
     void init(){
         log_d("Initializing Flapcontrol");
@@ -11,6 +13,9 @@ namespace OCFFlapControl {
         enableServos();
         pinMode(OCF_MONTION_INSIDE_PIN, INPUT);
         pinMode(OCF_MONTION_OUTSIDE_PIN, INPUT);
+        pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
+        count_motion_inside = 0;
+        count_motion_outside = 0;
     }
 
     void enableServos(){
@@ -102,9 +107,14 @@ namespace OCFFlapControl {
         if (motion_inside == 1 || motion_outside == 1){
             flapState.last_activity = millis();
         }
-        if (motion_inside == 1 && motion_outside == 1) return Direction::BOTH;
-        if (motion_inside == 1) return Direction::OUT;
-        if (motion_outside == 1) return Direction::IN;
+        if (count_motion_inside > INT_MAX - 100) count_motion_inside = 100;
+        if (count_motion_outside > INT_MAX - 100) count_motion_outside = 100;
+        if (motion_inside == 1) count_motion_inside++;
+        if (motion_outside == 1) count_motion_outside++;
+
+        if (count_motion_inside > 100  && motion_inside == 1 && count_motion_outside > 100 && motion_outside == 1) return Direction::BOTH;
+        if (count_motion_inside > 100 && motion_inside == 1) return Direction::OUT;
+        if (count_motion_outside > 100 && motion_outside == 1) return Direction::IN;
         return Direction::NONE;
     }
 
@@ -137,6 +147,10 @@ namespace OCFFlapControl {
         }else{
             diff = (ULONG_MAX - flapState.last_activity) + time + 1;
         }
+        if(diff > OCF_CLOSE_AFTER_MS) {
+            count_motion_inside = 0;
+            count_motion_outside = 0;
+        }
         if(diff > OCF_DISABLE_SERVOS_AFTER_MS && flapState.servosAttached){
             setLockState(Direction::IN, State::LOCKED);
             setLockState(Direction::OUT, State::LOCKED);
@@ -145,22 +159,35 @@ namespace OCFFlapControl {
         
     }
     
+    void getFlapStateJson(String& outStr){
+        DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
+        doc["allow_out"] = flapState.allow_out;
+        doc["allow_in"] = flapState.allow_in;
+        doc["state_lock_in"] = flapState.state_lock_in;
+        doc["state_lock_out"] = flapState.state_lock_out;
+        doc["servosAttached"] = flapState.servosAttached;
+        doc["last_activity"] = flapState.last_activity;
+        doc["last_change_in"] = flapState.last_change_in;
+        doc["last_change_out"] = flapState.last_change_out;
+        serializeJsonPretty(doc, outStr);
+    }
+    
     void loop(void* parameter){
         while(true){
             closeAutomatically();
             Direction d = detectMotion();
             if(d == Direction::NONE){
+                vTaskDelay(1);
                 continue;
             }else{
-                if (d == Direction::IN){
+                if (d == Direction::IN && flapState.state_lock_in == State::LOCKED){
                     if (flapState.allow_in) setLockState(d, State::UNLOCKED);
                 }
-                if (d == Direction::OUT){
+                if (d == Direction::OUT && flapState.state_lock_out == State::LOCKED){
                     if (flapState.allow_out) setLockState(d, State::UNLOCKED);
                 }
             }
             vTaskDelay(1);
-
         }
     }
 }

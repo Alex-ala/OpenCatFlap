@@ -23,6 +23,8 @@ namespace OCFFlapControl {
     extern Servo servo_in;
     extern Servo servo_out;
     extern FlapState flapState;
+    extern int count_motion_inside;
+    extern int count_motion_outside;
 
     void init();
     void deinit();
@@ -36,5 +38,6 @@ namespace OCFFlapControl {
     Direction detectMotion();
     void closeAutomatically();
     void loop(void* parameters);
+    void getFlapStateJson(String& strOut);
 };
 #endif // __OCFFLAPCONTROL_H__
