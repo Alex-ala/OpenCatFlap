@@ -15,6 +15,9 @@ namespace OCFFlapControl {
         State state_lock_out;
         bool allow_out;
         bool allow_in;
+        bool active;
+        int active_cat;
+        Direction flap_opened;
         uint64_t last_activity;
         uint64_t last_change_in;
         uint64_t last_change_out;
@@ -39,5 +42,6 @@ namespace OCFFlapControl {
     void closeAutomatically(Direction d);
     void loop(void* parameters);
     void getFlapStateJson(String& strOut);
+    void detectMovementDirection();
 };
 #endif // __OCFFLAPCONTROL_H__
