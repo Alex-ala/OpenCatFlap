@@ -14,6 +14,7 @@ namespace OCFFlapControl {
         pinMode(OCF_MOTION_INSIDE_PIN, INPUT);
         pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT);
         pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
+        setLockState(Direction::BOTH, State::LOCKED);
         count_motion_inside = 0;
         count_motion_outside = 0;
     }
@@ -60,6 +61,16 @@ namespace OCFFlapControl {
             }else{
                 moveServo(direction, OCF_SERVO_OUT_LOCKED);
             } 
+        }else if(direction == Direction::BOTH){
+            flapState.state_lock_out = state;
+            flapState.state_lock_in = state;
+            if(state == State::UNLOCKED){
+                moveServo(direction, OCF_SERVO_OUT_UNLOCKED);
+                moveServo(direction, OCF_SERVO_IN_UNLOCKED);
+            }else{
+                moveServo(direction, OCF_SERVO_OUT_LOCKED);
+                moveServo(direction, OCF_SERVO_IN_LOCKED);
+            } 
         }
     }
     void setAllowState(Direction direction, bool allowed){
@@ -100,19 +111,19 @@ namespace OCFFlapControl {
         log_d("Loaded flap state. (%d, %d)", flapState.allow_in, flapState.allow_out);
     }
     Direction detectMotion(){
-        int motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN);
-        int motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN);
-        if (motion_inside == 1 || motion_outside == 1){
+        int motion_inside = analogRead(OCF_MOTION_INSIDE_PIN);
+        int motion_outside = analogRead(OCF_MOTION_OUTSIDE_PIN);
+        if (motion_inside > OCF_MOTION_THRESHOLD || motion_outside > OCF_MOTION_THRESHOLD){
             flapState.last_activity = millis();
         }
         if (count_motion_inside > INT_MAX - OCF_MOTION_DELAY) count_motion_inside = OCF_MOTION_DELAY;
         if (count_motion_outside > INT_MAX - OCF_MOTION_DELAY) count_motion_outside = OCF_MOTION_DELAY;
-        if (motion_inside == 1) count_motion_inside++;
-        if (motion_outside == 1) count_motion_outside++;
+        if (motion_inside > OCF_MOTION_THRESHOLD) count_motion_inside++;
+        if (motion_outside > OCF_MOTION_THRESHOLD) count_motion_outside++;
 
-        if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside == 1 && count_motion_outside > OCF_MOTION_DELAY && motion_outside == 1) return Direction::BOTH;
-        if (count_motion_inside > OCF_MOTION_DELAY && motion_inside == 1) return Direction::OUT;
-        if (count_motion_outside > OCF_MOTION_DELAY && motion_outside == 1) return Direction::IN;
+        if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) return Direction::BOTH;
+        if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) return Direction::OUT;
+        if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) return Direction::IN;
         return Direction::NONE;
     }
 
@@ -187,6 +198,7 @@ namespace OCFFlapControl {
                 continue;
             }else{
                 if (d == Direction::IN){
+                    log_d("In");
                     if (flapState.allow_in) {
                         flapState.last_change_in = millis();
                         if(flapState.state_lock_in == State::LOCKED) setLockState(d, State::UNLOCKED);
