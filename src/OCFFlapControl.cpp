@@ -101,6 +101,9 @@ namespace OCFFlapControl {
             flapState.last_change_out = millis();
             flapState.allow_in = false;
             flapState.allow_out = false;
+            flapState.flap_opened = Direction::NONE;
+            flapState.active = false;
+            flapState.active_cat = 0;
             flapState.state_lock_in = State::UNLOCKED;
             flapState.state_lock_out = State::UNLOCKED;
             return;
@@ -159,6 +162,7 @@ namespace OCFFlapControl {
         if(diff > OCF_CLOSE_AFTER_MS) {
             count_motion_inside = 0;
             count_motion_outside = 0;
+            flapState.active = false;
         }
         if(diff > OCF_DISABLE_SERVOS_AFTER_MS && flapState.servosAttached){
             setLockState(Direction::IN, State::LOCKED);
@@ -180,10 +184,18 @@ namespace OCFFlapControl {
         doc["last_change_out"] = flapState.last_change_out;
         serializeJsonPretty(doc, outStr);
     }
+
+    void detectMovementDirection(){
+        int flap_sensor_in = analogRead(OCF_FLAPIR_INSIDE_PIN);
+        int flap_sensor_out = analogRead(OCF_FLAPIR_OUTSIDE_PIN);
+        if (flap_sensor_in > 2000) flapState.flap_opened = Direction::IN;
+        if (flap_sensor_out > 2000) flapState.flap_opened = Direction::OUT;
+    }
     
     void loop(void* parameter){
         unsigned long previous_millis = millis();
         unsigned long current_millis = 0;
+        bool previously_active = false;
         while(true){
             current_millis = millis();
             if (previous_millis == current_millis){
@@ -192,25 +204,30 @@ namespace OCFFlapControl {
             }
             previous_millis = current_millis;
             Direction d = detectMotion();
+            previously_active = flapState.active;
             closeAutomatically(d);
+            if (flapState.active != previously_active && ! flapState.active){
+                log_d("A cat went %d", flapState.flap_opened);
+                flapState.flap_opened = Direction::NONE;
+            }
             if(d == Direction::NONE){
                 vTaskDelay(1);
                 continue;
-            }else{
-                if (d == Direction::IN){
-                    log_d("In");
-                    if (flapState.allow_in) {
-                        flapState.last_change_in = millis();
-                        if(flapState.state_lock_in == State::LOCKED) setLockState(d, State::UNLOCKED);
-                    }
-                }
-                if (d == Direction::OUT){
-                    if (flapState.allow_out) {
-                        flapState.last_change_out = millis();
-                        if (flapState.state_lock_out == State::LOCKED) setLockState(d, State::UNLOCKED);
-                    }
+            }
+            flapState.active = true;
+            if (d == Direction::IN){
+                if (flapState.allow_in) {
+                    flapState.last_change_in = millis();
+                    if(flapState.state_lock_in == State::LOCKED) setLockState(d, State::UNLOCKED);
                 }
             }
+            if (d == Direction::OUT){
+                if (flapState.allow_out) {
+                    flapState.last_change_out = millis();
+                    if (flapState.state_lock_out == State::LOCKED) setLockState(d, State::UNLOCKED);
+                }
+            }
+            if (flapState.active) detectMovementDirection();
             vTaskDelay(1);
         }
     }
