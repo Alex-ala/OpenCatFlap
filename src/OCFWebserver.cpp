@@ -68,7 +68,7 @@ namespace OCFWebserver{
                 server.send(400, "text/html", "data json missing direction or allowed field");
                 return;
             }
-            OCFFlapControl::Direction direction = parseDirection(doc["direction"].as<String>());
+            OCFDirection direction = parseDirection(doc["direction"].as<String>());
             OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
         }else if (doc["command"] == "status"){
             String str;
@@ -80,12 +80,12 @@ namespace OCFWebserver{
         server.send(200, "text/html", "api post");
     }
 
-    OCFFlapControl::Direction parseDirection(String direction){
-        if (direction == "in") return OCFFlapControl::Direction::IN;
-        if (direction == "out") return OCFFlapControl::Direction::OUT;
-        if (direction == "both") return OCFFlapControl::Direction::BOTH;
+    OCFDirection parseDirection(String direction){
+        if (direction == "in") return OCFDirection::IN;
+        if (direction == "out") return OCFDirection::OUT;
+        if (direction == "both") return OCFDirection::BOTH;
         log_d("Failed to parse direction %s", direction);
-        return OCFFlapControl::Direction::NONE;
+        return OCFDirection::NONE;
     }
 
     void loop(void* parameter){

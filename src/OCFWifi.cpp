@@ -5,8 +5,11 @@ namespace OCFWifi {
     bool connected = false;
     bool configured = false;
     WifiConfiguration config = WifiConfiguration();
+    WiFiUDP ntpUDP;
+    NTPClient timeClient(ntpUDP);
     // Load Wifi settings, create a configuration object and initalize state variables
     void init() {
+
         StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
         bool file_read = OCFFilesystem::readJsonFile(CONFIG_FILE, doc);
         if (configure(doc)){
@@ -19,10 +22,17 @@ namespace OCFWifi {
 
     bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
         if(doc.containsKey("ssid")) config.ssid = doc["ssid"].as<String>(); else return false;
-        if(doc.containsKey("passphrase")) config.passphrase = doc["passphrase"].as<String>();
-        if(doc.containsKey("ip")) config.ip = doc["ip"].as<String>();
-        if(doc.containsKey("gateway")) config.gateway = doc["gateway"].as<String>();
-        if(doc.containsKey("netmask")) config.netmask = doc["netmask"].as<String>();
+        config.passphrase = (doc.containsKey("passphrase")) ? doc["passphrase"].as<String>() : "";
+        config.ip = (doc.containsKey("ip")) ? doc["ip"].as<String>() : "";
+        config.gateway = (doc.containsKey("gateway")) ? doc["gateway"].as<String>() : "";
+        config.netmask = (doc.containsKey("netmask")) ? doc["netmask"].as<String>() : "255.255.255.0";
+        if (doc.containsKey("ntpServer")){
+          log_d("Settin ntp server to %s...", config.ntpServer);
+          config.ntpServer = doc["ntpServer"].as<String>();  
+          timeClient.setPoolServerName(config.ntpServer.c_str());
+          timeClient.update();
+          log_d("Set ntp server to %s", config.ntpServer);
+        } 
         OCFFilesystem::writeJsonFile(CONFIG_FILE, doc);
         doc.clear();
         configured = true;
@@ -65,6 +75,7 @@ namespace OCFWifi {
             }
         }
         log_d("Connected to wifi %s with IP %s", config.ssid, WiFi.localIP().toString());
+        timeClient.update();
         return true;
     }
 
@@ -73,7 +84,7 @@ namespace OCFWifi {
     void monitorWifi(void* params){
         while(true){
             while(WiFi.status() == WL_CONNECTED || !configured){
-                sleep(1);
+                sleep(10);
             }
             log_d("Lost WiFi connection (%d), waiting...", WiFi.status());
             int max_wait = 30;

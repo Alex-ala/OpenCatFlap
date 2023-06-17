@@ -6,18 +6,20 @@
 #include <definitions.h>
 #include <ArduinoJson.h>
 #include <OCFFilesystem.h>
+#include <OCFWifi.h>
+
+enum OCFDirection { IN, OUT, NONE, BOTH };
+enum OCFState { LOCKED, UNLOCKED };
 
 namespace OCFFlapControl {
-    enum Direction { IN, OUT, NONE, BOTH };
-    enum State { LOCKED, UNLOCKED };
     struct FlapState {
-        State state_lock_in;
-        State state_lock_out;
+        OCFState state_lock_in;
+        OCFState state_lock_out;
         bool allow_out;
         bool allow_in;
         bool active;
         int active_cat;
-        Direction flap_opened;
+        OCFDirection flap_opened;
         uint64_t last_activity;
         uint64_t last_change_in;
         uint64_t last_change_out;
@@ -33,13 +35,13 @@ namespace OCFFlapControl {
     void deinit();
     void enableServos();
     void disableServos();
-    void moveServo(Direction direction, int angle);
-    void setLockState(Direction direction, State state);
-    void setAllowState(Direction direction, bool allowed);
+    void moveServo(OCFDirection direction, int angle);
+    void setLockState(OCFDirection direction, OCFState state);
+    void setAllowState(OCFDirection direction, bool allowed);
     void persistState();
     void loadState();
-    Direction detectMotion();
-    void closeAutomatically(Direction d);
+    OCFDirection detectMotion();
+    void closeAutomatically(OCFDirection d);
     void loop(void* parameters);
     void getFlapStateJson(String& strOut);
     void detectMovementDirection();

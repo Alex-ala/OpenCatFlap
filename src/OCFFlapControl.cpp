@@ -14,7 +14,7 @@ namespace OCFFlapControl {
         pinMode(OCF_MOTION_INSIDE_PIN, INPUT);
         pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT);
         pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
-        setLockState(Direction::BOTH, State::LOCKED);
+        setLockState(OCFDirection::BOTH, OCFState::LOCKED);
         count_motion_inside = 0;
         count_motion_outside = 0;
     }
@@ -33,52 +33,52 @@ namespace OCFFlapControl {
         flapState.servosAttached = false;
     }
 
-    void moveServo(Direction direction, int angle){
+    void moveServo(OCFDirection OCFDirection, int angle){
         if(!flapState.servosAttached) enableServos();
-        switch(direction){
-            case Direction::IN:
+        switch(OCFDirection){
+            case OCFDirection::IN:
                 log_d("Movin servo IN to %d", angle);
                 servo_in.write(angle);
                 break;
-            case Direction::OUT:
+            case OCFDirection::OUT:
                 log_d("Movin servo OUT to %d", angle);
                 servo_out.write(angle);
                 break;
         }
     }
-    void setLockState(Direction direction, State state){
-        if(direction == Direction::IN){
+    void setLockState(OCFDirection OCFDirection, OCFState state){
+        if(OCFDirection == OCFDirection::IN){
             flapState.state_lock_in = state;
-            if(state == State::UNLOCKED){
-                moveServo(direction, OCF_SERVO_IN_UNLOCKED);
+            if(state == OCFState::UNLOCKED){
+                moveServo(OCFDirection, OCF_SERVO_IN_UNLOCKED);
             }else{
-                moveServo(direction, OCF_SERVO_IN_LOCKED);
+                moveServo(OCFDirection, OCF_SERVO_IN_LOCKED);
             }
-        }else if(direction == Direction::OUT){
+        }else if(OCFDirection == OCFDirection::OUT){
             flapState.state_lock_out = state;
-            if(state == State::UNLOCKED){
-                moveServo(direction, OCF_SERVO_OUT_UNLOCKED);
+            if(state == OCFState::UNLOCKED){
+                moveServo(OCFDirection, OCF_SERVO_OUT_UNLOCKED);
             }else{
-                moveServo(direction, OCF_SERVO_OUT_LOCKED);
+                moveServo(OCFDirection, OCF_SERVO_OUT_LOCKED);
             } 
-        }else if(direction == Direction::BOTH){
+        }else if(OCFDirection == OCFDirection::BOTH){
             flapState.state_lock_out = state;
             flapState.state_lock_in = state;
-            if(state == State::UNLOCKED){
-                moveServo(direction, OCF_SERVO_OUT_UNLOCKED);
-                moveServo(direction, OCF_SERVO_IN_UNLOCKED);
+            if(state == OCFState::UNLOCKED){
+                moveServo(OCFDirection, OCF_SERVO_OUT_UNLOCKED);
+                moveServo(OCFDirection, OCF_SERVO_IN_UNLOCKED);
             }else{
-                moveServo(direction, OCF_SERVO_OUT_LOCKED);
-                moveServo(direction, OCF_SERVO_IN_LOCKED);
+                moveServo(OCFDirection, OCF_SERVO_OUT_LOCKED);
+                moveServo(OCFDirection, OCF_SERVO_IN_LOCKED);
             } 
         }
     }
-    void setAllowState(Direction direction, bool allowed){
-        setLockState(direction, State::LOCKED);
-        if (direction == Direction::IN || direction == Direction::BOTH){
+    void setAllowState(OCFDirection OCFDirection, bool allowed){
+        setLockState(OCFDirection, OCFState::LOCKED);
+        if (OCFDirection == OCFDirection::IN || OCFDirection == OCFDirection::BOTH){
             flapState.allow_in = allowed;
         }
-        if (direction == Direction::OUT || direction == Direction::BOTH)
+        if (OCFDirection == OCFDirection::OUT || OCFDirection == OCFDirection::BOTH)
         {
             flapState.allow_out = allowed;
         }    
@@ -96,16 +96,16 @@ namespace OCFFlapControl {
         bool loaded = OCFFilesystem::readJsonFile(OCF_PATHS_FLAP_STATE, doc);
         if (!loaded){
             log_d("Failed to load state");
-            flapState.last_activity = millis();
-            flapState.last_change_in = millis();
-            flapState.last_change_out = millis();
+            flapState.last_activity = 0;
+            flapState.last_change_in = 0;
+            flapState.last_change_out = 0;
             flapState.allow_in = false;
             flapState.allow_out = false;
-            flapState.flap_opened = Direction::NONE;
+            flapState.flap_opened = OCFDirection::NONE;
             flapState.active = false;
             flapState.active_cat = 0;
-            flapState.state_lock_in = State::UNLOCKED;
-            flapState.state_lock_out = State::UNLOCKED;
+            flapState.state_lock_in = OCFState::UNLOCKED;
+            flapState.state_lock_out = OCFState::UNLOCKED;
             return;
         }
         if (doc.containsKey("allow_out")) OCFFlapControl::flapState.allow_out = doc["allow_out"].as<bool>();
@@ -113,60 +113,45 @@ namespace OCFFlapControl {
         doc.clear();
         log_d("Loaded flap state. (%d, %d)", flapState.allow_in, flapState.allow_out);
     }
-    Direction detectMotion(){
+    OCFDirection detectMotion(){
         int motion_inside = analogRead(OCF_MOTION_INSIDE_PIN);
         int motion_outside = analogRead(OCF_MOTION_OUTSIDE_PIN);
         if (motion_inside > OCF_MOTION_THRESHOLD || motion_outside > OCF_MOTION_THRESHOLD){
-            flapState.last_activity = millis();
+            flapState.last_activity = OCFWifi::timeClient.getEpochTime();
         }
         if (count_motion_inside > INT_MAX - OCF_MOTION_DELAY) count_motion_inside = OCF_MOTION_DELAY;
         if (count_motion_outside > INT_MAX - OCF_MOTION_DELAY) count_motion_outside = OCF_MOTION_DELAY;
         if (motion_inside > OCF_MOTION_THRESHOLD) count_motion_inside++;
         if (motion_outside > OCF_MOTION_THRESHOLD) count_motion_outside++;
 
-        if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) return Direction::BOTH;
-        if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) return Direction::OUT;
-        if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) return Direction::IN;
-        return Direction::NONE;
+        if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) return OCFDirection::BOTH;
+        if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) return OCFDirection::OUT;
+        if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) return OCFDirection::IN;
+        return OCFDirection::NONE;
     }
 
-    void closeAutomatically(Direction d){
-        unsigned long time = millis();
+    void closeAutomatically(OCFDirection d){
+        unsigned long time = OCFWifi::timeClient.getEpochTime();
         unsigned long diff = 0;
-
-        if (time >= flapState.last_change_in){
-            diff = time - flapState.last_change_in;
-        }else {
-            diff = (ULONG_MAX - flapState.last_change_in) + time + 1;
+        diff = time - flapState.last_change_in;
+        if(diff > OCF_CLOSE_AFTER_S && flapState.state_lock_in == OCFState::UNLOCKED){
+            log_d("Locking IN due to inactivity (%d > %d)", time, flapState.last_change_in + OCF_CLOSE_AFTER_S );
+            setLockState(OCFDirection::IN, OCFState::LOCKED);
         }
-        if(diff > OCF_CLOSE_AFTER_MS && flapState.state_lock_in == State::UNLOCKED){
-            log_d("Locking IN due to inactivity (%d > %d)", time, flapState.last_change_in + 2000 );
-            setLockState(Direction::IN, State::LOCKED);
+        diff = time - flapState.last_change_out;
+        if(diff > OCF_CLOSE_AFTER_S && flapState.state_lock_out == OCFState::UNLOCKED){
+            log_d("Locking OUT due to inactivity (%d > %d)", time, flapState.last_change_out + OCF_CLOSE_AFTER_S );
+            setLockState(OCFDirection::OUT, OCFState::LOCKED);
         }
-
-        if (time >= flapState.last_change_out){
-            diff = time - flapState.last_change_out;
-        }else {
-            diff = (ULONG_MAX - flapState.last_change_out) + time + 1;
-        }          
-        if(diff > OCF_CLOSE_AFTER_MS && flapState.state_lock_out == State::UNLOCKED){
-            log_d("Locking OUT due to inactivity");
-            setLockState(Direction::OUT, State::LOCKED);
-        }
-
-        if (time >= flapState.last_activity) {
-            diff = time - flapState.last_activity;
-        }else{
-            diff = (ULONG_MAX - flapState.last_activity) + time + 1;
-        }
-        if(diff > OCF_CLOSE_AFTER_MS) {
+        diff = time - flapState.last_activity;
+        if(diff > OCF_CLOSE_AFTER_S) {
             count_motion_inside = 0;
             count_motion_outside = 0;
             flapState.active = false;
         }
-        if(diff > OCF_DISABLE_SERVOS_AFTER_MS && flapState.servosAttached){
-            setLockState(Direction::IN, State::LOCKED);
-            setLockState(Direction::OUT, State::LOCKED);
+        if(diff > OCF_DISABLE_SERVOS_AFTER_S && flapState.servosAttached){
+            setLockState(OCFDirection::IN, OCFState::LOCKED);
+            setLockState(OCFDirection::OUT, OCFState::LOCKED);
             disableServos();
         }
         
@@ -182,14 +167,15 @@ namespace OCFFlapControl {
         doc["last_activity"] = flapState.last_activity;
         doc["last_change_in"] = flapState.last_change_in;
         doc["last_change_out"] = flapState.last_change_out;
+        doc["memory_usage"] = esp_get_free_heap_size();
         serializeJsonPretty(doc, outStr);
     }
 
-    void detectMovementDirection(){
+    void detectMovementOCFDirection(){
         int flap_sensor_in = analogRead(OCF_FLAPIR_INSIDE_PIN);
         int flap_sensor_out = analogRead(OCF_FLAPIR_OUTSIDE_PIN);
-        if (flap_sensor_in > 2000) flapState.flap_opened = Direction::IN;
-        if (flap_sensor_out > 2000) flapState.flap_opened = Direction::OUT;
+        if (flap_sensor_in > 2000) flapState.flap_opened = OCFDirection::IN;
+        if (flap_sensor_out > 2000) flapState.flap_opened = OCFDirection::OUT;
     }
     
     void loop(void* parameter){
@@ -197,37 +183,41 @@ namespace OCFFlapControl {
         unsigned long current_millis = 0;
         bool previously_active = false;
         while(true){
+            // Run max every ms
             current_millis = millis();
             if (previous_millis == current_millis){
                 vTaskDelay(1);
                 continue;
             }
             previous_millis = current_millis;
-            Direction d = detectMotion();
+            // Detect activity
+            OCFDirection d = detectMotion();
             previously_active = flapState.active;
+            // Handle no activity
             closeAutomatically(d);
             if (flapState.active != previously_active && ! flapState.active){
                 log_d("A cat went %d", flapState.flap_opened);
-                flapState.flap_opened = Direction::NONE;
+                flapState.flap_opened = OCFDirection::NONE;
             }
-            if(d == Direction::NONE){
+            if(d == OCFDirection::NONE){
                 vTaskDelay(1);
                 continue;
             }
+            // Handle activity
             flapState.active = true;
-            if (d == Direction::IN){
+            if (d == OCFDirection::IN){
                 if (flapState.allow_in) {
-                    flapState.last_change_in = millis();
-                    if(flapState.state_lock_in == State::LOCKED) setLockState(d, State::UNLOCKED);
+                    flapState.last_change_in = OCFWifi::timeClient.getEpochTime();
+                    if(flapState.state_lock_in == OCFState::LOCKED) setLockState(d, OCFState::UNLOCKED);
                 }
             }
-            if (d == Direction::OUT){
+            if (d == OCFDirection::OUT){
                 if (flapState.allow_out) {
-                    flapState.last_change_out = millis();
-                    if (flapState.state_lock_out == State::LOCKED) setLockState(d, State::UNLOCKED);
+                    flapState.last_change_out = OCFWifi::timeClient.getEpochTime();
+                    if (flapState.state_lock_out == OCFState::LOCKED) setLockState(d, OCFState::UNLOCKED);
                 }
             }
-            if (flapState.active) detectMovementDirection();
+            if (flapState.active) detectMovementOCFDirection();
             vTaskDelay(1);
         }
     }
