@@ -30,6 +30,8 @@ Pretty much decided on the Hardware for now. It will base on an ESP32 with vario
 
 The 3D model is ready to be tested and a printed version is already in use to debug the code.
 
+![Bad schematics](opencatflap.drawio.svg)
+
 **Software:**
 
 Just started working on this...
