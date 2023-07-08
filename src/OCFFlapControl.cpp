@@ -114,8 +114,8 @@ namespace OCFFlapControl {
         log_d("Loaded flap state. (%d, %d)", flapState.allow_in, flapState.allow_out);
     }
     OCFDirection detectMotion(){
-        int motion_inside = analogRead(OCF_MOTION_INSIDE_PIN);
-        int motion_outside = analogRead(OCF_MOTION_OUTSIDE_PIN);
+        int motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN);
+        int motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN);
         if (motion_inside > OCF_MOTION_THRESHOLD || motion_outside > OCF_MOTION_THRESHOLD){
             flapState.last_activity = OCFWifi::timeClient.getEpochTime();
         }

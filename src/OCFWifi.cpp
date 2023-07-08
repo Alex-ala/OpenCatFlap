@@ -26,12 +26,9 @@ namespace OCFWifi {
         config.ip = (doc.containsKey("ip")) ? doc["ip"].as<String>() : "";
         config.gateway = (doc.containsKey("gateway")) ? doc["gateway"].as<String>() : "";
         config.netmask = (doc.containsKey("netmask")) ? doc["netmask"].as<String>() : "255.255.255.0";
-        if (doc.containsKey("ntpServer")){
-          log_d("Settin ntp server to %s...", config.ntpServer);
+        if (doc.containsKey("ntpServer") && doc["ntpServer"].as<String>() != ""){
           config.ntpServer = doc["ntpServer"].as<String>();  
-          timeClient.setPoolServerName(config.ntpServer.c_str());
-          timeClient.update();
-          log_d("Set ntp server to %s", config.ntpServer);
+          log_d("Setting ntp server to %s...", config.ntpServer);
         } 
         OCFFilesystem::writeJsonFile(CONFIG_FILE, doc);
         doc.clear();
@@ -75,6 +72,9 @@ namespace OCFWifi {
             }
         }
         log_d("Connected to wifi %s with IP %s", config.ssid, WiFi.localIP().toString());
+        timeClient.setPoolServerName(config.ntpServer.c_str());
+        timeClient.update();
+        log_d("Set ntp server to %s", config.ntpServer);
         timeClient.update();
         return true;
     }
