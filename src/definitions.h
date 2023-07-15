@@ -22,3 +22,7 @@
 #define OCF_PATHS_FLAP_STATE "/flapState.json"
 
 #define OCF_DEFAULT_NTP_SERVER "pool.ntp.org"
+
+#define OCF_MQTT_CA_PATH "/mqtt_ca"
+#define OCF_MQTT_CERT_PATH "/mqtt_cert"
+#define OCF_MQTT_KEY_PATH "/mqtt_key"

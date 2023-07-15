@@ -13,6 +13,7 @@ namespace OCFWebserver{
     void handle_debug();
     void handle_api_get();
     void handle_api_post();
+    void handle_certs();
     OCFDirection parseDirection(String direction);
     void loop(void* parameter);
     void init();

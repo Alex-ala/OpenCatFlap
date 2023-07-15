@@ -41,18 +41,40 @@ namespace OCFFilesystem{
         return false;    
     }
 
-    String readStringFile(const char * path){
+    int getFileSize(const char * path){
         fs::FS &fs = SPIFFS;
         File file = fs.open(path, FILE_READ);
         if(!file || file.isDirectory()){
             log_d("Failed to open %s", path);
-            return String();
+            return 0;
         }
-        String fileContent;
-        while(file.available()){
-            fileContent = file.readStringUntil('\0');
-            break;     
+        return file.available();
+    }
+
+    int readStringFile(const char * path, char* output, size_t max_size){
+        fs::FS &fs = SPIFFS;
+        File file = fs.open(path, FILE_READ);
+        if(!file || file.isDirectory()){
+            log_d("Failed to open %s", path);
+            return 0;
         }
-        return fileContent;
+        size_t bytesRead = 0;
+        bytesRead = file.readBytesUntil('\0', output, max_size);
+        output[bytesRead] = '\0';
+        file.close();
+        return bytesRead;
+    }
+
+    bool writeStringFile(const char * path, const char* data){
+        log_d("About to write to %s", path);
+        fs::FS &fs = SPIFFS;
+        File file = fs.open(path, FILE_WRITE);
+        if(!file || file.isDirectory()){
+            log_d("Failed to open %s", path);
+            return false;
+        }
+        file.printf("%s\0", data);
+        file.close();
+        return true;
     }
 }
