@@ -10,16 +10,16 @@
 namespace OCFMQTT{
     extern const char* CONFIG_FILE;
     struct MQTTConfiguration {
-        const char* server;
-        int port;
-        const char* user;
-        const char* password;
-        const char* ca;
-        const char* cert;
-        const char* key;
-        const char* name;
-        bool ssl;
-        bool logActivity;
+        const char* server = "";
+        int port = 0;
+        const char* user = "";
+        const char* password = "";
+        const char* ca = "";
+        const char* cert = "";
+        const char* key = "";
+        const char* name = "doorofdurin";
+        bool ssl = false;
+        bool logActivity = false;
     };
     extern bool connected;
     extern bool configured;
@@ -27,6 +27,7 @@ namespace OCFMQTT{
     extern PubSubClient mqttclient;
 
     bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
+    void saveConfiguration();
     void init();
     bool connectMQTT();
     void monitorMQTT(void* parameter);

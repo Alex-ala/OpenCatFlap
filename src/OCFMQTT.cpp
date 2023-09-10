@@ -4,6 +4,7 @@ namespace OCFMQTT {
     const char* CONFIG_FILE = "/mqtt_configuration.json";
     bool connected = false;
     bool configured = false;
+    //TODO: This is not really a global unique variable. This exists more often (due to multiple references to htis namespace?). Consider rewriting to classes + singletons
     MQTTConfiguration config = MQTTConfiguration();
     PubSubClient mqttclient;
     WiFiClientSecure mqtt_secure;
@@ -20,16 +21,13 @@ namespace OCFMQTT {
     }
 
     bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
-        config.ssl = false;
-        config.user = "NONE";
-        config.password = "NONE";
-        if(doc.containsKey("name")) config.name = doc["name"].as<const char*>(); else config.name = "doorofdurin";
-        if(doc.containsKey("logActivity")) config.name = doc["logActivity"].as<const char*>(); else config.logActivity = false;
-        if(doc.containsKey("server")) config.server = doc["server"].as<const char*>(); else return false;
-        if(doc.containsKey("port")) config.port = doc["port"].as<int>(); else return false;
+        if(doc.containsKey("name")) config.name = doc["name"].as<const char*>();
+        if(doc.containsKey("logActivity")) config.logActivity = doc["logActivity"].as<bool>();
+        if(doc.containsKey("server")) config.server = doc["server"].as<const char*>();
+        if(doc.containsKey("port")) config.port = doc["port"].as<int>();
         if(doc.containsKey("user")) config.user = doc["user"].as<const char*>();
         if(doc.containsKey("password")) config.password = doc["password"].as<const char*>();
-        if(doc.containsKey("ssl")) config.ssl = doc["ssl"].as<bool>(); else config.ssl = false;
+        if(doc.containsKey("ssl")) config.ssl = doc["ssl"].as<bool>();
         int size = OCFFilesystem::getFileSize(OCF_MQTT_CA_PATH);
         char* tmp = (char*)malloc(sizeof(char)*size);
         OCFFilesystem::readStringFile(OCF_MQTT_CA_PATH, tmp, size);
@@ -42,13 +40,34 @@ namespace OCFMQTT {
         char* tmp3 = (char*)malloc(sizeof(char)*size);
         OCFFilesystem::readStringFile(OCF_MQTT_KEY_PATH, tmp3, size);
         config.key = tmp3;
-        log_d("read all");
+        sleep(1);
+        doc.clear();
+        saveConfiguration();
+        if (config.server == "" || config.port == 0){
+            configured = false;
+            return false;
+        }
+        if (config.ssl && config.ca == ""){
+            configured = false;
+            return false;
+        }
+        configured = true;
+        log_d("Configured MQTT for (%s:%d)", config.server, config.port);
+        return true;
+    }
+
+    void saveConfiguration(){
+        StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
+        doc["name"] = config.name;
+        doc["logActivity"] = config.logActivity;
+        doc["server"] = config.server;
+        doc["port"] = config.port;
+        doc["user"] = config.user;
+        doc["password"] = config.password;
+        doc["ssl"] = config.ssl;
         OCFFilesystem::writeJsonFile(CONFIG_FILE, doc);
         sleep(1);
         doc.clear();
-        configured = true;
-        log_d("Configured MQTT for (%s:%d)", config.server, config.port);
-        return configured;
     }
 
     bool connectMQTT(){

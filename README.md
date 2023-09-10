@@ -41,7 +41,7 @@ Just started working on this... As RFID is still missing, no cat detection is ye
 
 How to configure (for now):
 Wifi: `curl -H "Content-Type: application/json" http://192.168.4.1/api -d '{"command": "wifiConfig", "ssid": "Bockenburg", "passphrase": ""}'`
-MQTT: `curl -H "Content-Type: application/json" 'http://10.5.0.60/api' -d'{"command": "mqttConfig", "server": "mosquitto.ahome", "port": 8011, "ssl": true}'`
+MQTT: `curl -H "Content-Type: application/json" 'http://10.5.0.60/api' -d'{"command": "mqttConfig", "server": "mosquitto.ahome", "port": 8011, "ssl": true, "logActivity": true}'`
 MQTT Certificates: 
 ```
 curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=key' --data-binary @/home/alex/trash/opencatflap.key

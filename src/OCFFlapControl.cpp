@@ -50,9 +50,9 @@ namespace OCFFlapControl {
         flapState.servosAttached = false;
     }
 
-    void moveServo(OCFDirection OCFDirection, int angle){
+    void moveServo(OCFDirection direction, int angle){
         if(!flapState.servosAttached) enableServos();
-        switch(OCFDirection){
+        switch(direction){
             case OCFDirection::IN:
                 log_d("Movin servo IN to %d", angle);
                 servo_in.write(angle);
@@ -90,10 +90,11 @@ namespace OCFFlapControl {
             } 
         }
         if (OCFMQTT::config.logActivity){
-            String s = String("{\"direction\": \"}") + DirectionString(direction) + "\", \"state\": \"" + StateString(state) + "\"}";
+            String s = String("{\"direction\": \"") + DirectionString(direction) + "\", \"state\": \"" + StateString(state) + "\"}";
             OCFMQTT::sendMessage("activity", s.c_str());
         }
     }
+
     void setAllowState(OCFDirection direction, bool allowed){
         setLockState(direction, OCFState::LOCKED);
         if (direction == OCFDirection::IN || direction == OCFDirection::BOTH){
@@ -225,7 +226,7 @@ namespace OCFFlapControl {
             // Handle no activity
             closeAutomatically(d);
             if (flapState.active != previously_active && ! flapState.active){
-                log_d("A cat went %d", flapState.flap_opened);
+                log_d("A cat went %s", DirectionString(flapState.flap_opened));
                 flapState.flap_opened = OCFDirection::NONE;
             }
             if(d != OCFDirection::NONE){
@@ -256,3 +257,88 @@ namespace OCFFlapControl {
         }
     }
 }
+
+
+
+/*
+loop()
+    case state1: state1();
+    case state1: state2();
+
+statelessActions();
+state1():
+    while(true):
+        do stuff
+        check transition condition
+            transition to state x
+            break
+        statelessActions()
+        vtaskdelay(1)
+state2():
+    while(true):
+        do stuff
+        check transition condition
+            transition to state x
+            break
+        statelessActions()
+        vtaskdelay(1)
+*/
+
+
+/*
+
+There are two coexisting machines:
+    1. Sensor statemachine
+    2. Flap machine (layered)
+Global variables:
+    Active_tags with directions/locations and time (maybe add a bool or len) 
+
+Sensor-Machine:
+    Idle:
+        Check PIRs for movement
+        If movement is detected, transition to ReadTag
+    ReadTag:
+        Init:
+            Ensure RFID Sensors are powered on
+            Store current time
+        Deinit:
+            Power off RFID sensors
+            Clear active_tags
+        Loop:
+            Check if a tag was read
+                If tag was read add or update active_tags
+                Remove tags from active_tags that weren't seen for more than 5s
+            Check for any movement
+                If no movement detected for more than 10s, deinit and transition to Idle
+                If movement detected, store current time
+    
+Flap-Machine:
+    Variables: 
+        Lock-Status with timer per direction
+        enable_unlock
+        flap_is_open (direction)
+        time_since_flap_open
+    Idle layer: Do nothing (vtaskdelay)
+    Proximity layer (if active_tags is not empty):
+        Check permissions on tags and flap
+        Enable unlock-layer
+    Unlock-Layer (if enabled by proximity layer):
+        Check permissions on tags and flap
+        Check Servos and enable them
+        Unlock accordingly
+            store state and time in lock-status
+        Check lock-status 
+            Lock if unlocked for >5s
+            if both directions locked: disable servos and unlock layer
+    Possible-Movement-Layer (enabled if lock-status has an unlocked state):
+        Check flap rotation
+            set direction flap_is_open
+            store current time in time_since_flap_open
+        If flap is closed for more than 2s:
+            flap_is_open = None        
+    Movement-Layer (if flap_is_open):
+        Depending on rotation and active_tag location+unlock state determine tag movement
+        Consult active_tag and (future IR, outside rfid) to see if multiple tags moved.
+
+
+*/
