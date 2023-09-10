@@ -36,7 +36,11 @@ The 3D model is ready to be tested and a printed version is already in use to de
 
 Just started working on this...
 
+Just started working on this... As RFID is still missing, no cat detection is yet ready. It works as a dumb cat flap though.
 
+![pic1](img/IMG_3608.PNG)
+![pic2](img/IMG_2905.jpg)
+![cat approved](img/IMG_2830.JPG)
 
 Resources:
 https://app.ultralibrarian.com/details/Panasonic/AMN31112?uid=6030155
