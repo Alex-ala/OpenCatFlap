@@ -7,9 +7,13 @@
 #include <ArduinoJson.h>
 #include <OCFFilesystem.h>
 #include <OCFWifi.h>
+#include <OCFMQTT.h>
 
 enum OCFDirection { IN, OUT, NONE, BOTH };
 enum OCFState { LOCKED, UNLOCKED };
+
+const char* DirectionString(OCFDirection dir);
+const char* StateString(OCFState state);
 
 namespace OCFFlapControl {
     struct FlapState {

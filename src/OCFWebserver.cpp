@@ -21,19 +21,19 @@ namespace OCFWebserver{
 
     void handle_certs(){
         log_d("Received request on /api/certs");
-        if(!server.hasArg("name") || !server.hasArg("cert")){
+        if(!server.hasArg("name") || !server.hasArg("plain")){
             server.send(400, "text/html", "No cert name received");
             return;
         }
         String name = server.arg("name");
         if(name == "ca"){
-            OCFFilesystem::writeStringFile(OCF_MQTT_CA_PATH, server.arg("cert").c_str());
+            OCFFilesystem::writeStringFile(OCF_MQTT_CA_PATH, server.arg("plain").c_str());
             log_d("Wrote ca cert");
         }else if(name == "cert"){
-            OCFFilesystem::writeStringFile(OCF_MQTT_CERT_PATH, server.arg("cert").c_str());
+            OCFFilesystem::writeStringFile(OCF_MQTT_CERT_PATH, server.arg("plain").c_str());
             log_d("Wrote cert");
         }else if(name == "key"){
-            OCFFilesystem::writeStringFile(OCF_MQTT_KEY_PATH, server.arg("cert").c_str());
+            OCFFilesystem::writeStringFile(OCF_MQTT_KEY_PATH, server.arg("plain").c_str());
             log_d("Wrote key");
         }else{
             log_d("Invalid name given");

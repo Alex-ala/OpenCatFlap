@@ -4,3 +4,6 @@
 .vscode/launch.json
 .vscode/ipch
 data/wifi_configuration.json
+cad/gerber*
+cad/*backups
+cad/fp-info-cache*

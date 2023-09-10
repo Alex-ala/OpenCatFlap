@@ -23,6 +23,8 @@ namespace OCFMQTT {
         config.ssl = false;
         config.user = "NONE";
         config.password = "NONE";
+        if(doc.containsKey("name")) config.name = doc["name"].as<const char*>(); else config.name = "doorofdurin";
+        if(doc.containsKey("logActivity")) config.name = doc["logActivity"].as<const char*>(); else config.logActivity = false;
         if(doc.containsKey("server")) config.server = doc["server"].as<const char*>(); else return false;
         if(doc.containsKey("port")) config.port = doc["port"].as<int>(); else return false;
         if(doc.containsKey("user")) config.user = doc["user"].as<const char*>();
@@ -68,7 +70,7 @@ namespace OCFMQTT {
             connected = mqttclient.connect("OpenCatFlap", config.user, config.password);
         }else{
             log_d("Connecting to mqtt with ssl %d", mqttclient.state());
-            //connected = mqttclient.connect("OpenCatFlap");
+            connected = mqttclient.connect("OpenCatFlap");
         }
         if (connected){
             log_d("Connected to MQTT at %s:%d", config.server, config.port);
@@ -85,6 +87,9 @@ namespace OCFMQTT {
     void monitorMQTT(void* params){
         while(true){
             while(connected || !configured){
+                if(connected) {
+                    connected = mqttclient.loop();
+                }
                 sleep(10);
             }
             log_d("Lost MQTT connection, waiting...");
@@ -106,5 +111,19 @@ namespace OCFMQTT {
             mqttclient.disconnect();
         }
         connectMQTT();
+    }
+
+    void sendMessage(const char *topic, const char *message){
+        if (! connected) return;
+        String t = "opencatflap/";
+        t.concat(config.name);
+        t.concat("/");
+        t.concat(topic);
+        const char* c_topic = t.c_str();
+        log_d("Sending message via MQTT to topic %s", c_topic);
+        bool success = mqttclient.publish(c_topic, message);
+        if (!success) {
+            log_d("Failed to send message to topic %s, len %d", c_topic, t.length());
+        }
     }
 }

@@ -17,7 +17,9 @@ namespace OCFMQTT{
         const char* ca;
         const char* cert;
         const char* key;
+        const char* name;
         bool ssl;
+        bool logActivity;
     };
     extern bool connected;
     extern bool configured;
@@ -29,6 +31,7 @@ namespace OCFMQTT{
     bool connectMQTT();
     void monitorMQTT(void* parameter);
     void reconnect();
+    void sendMessage(const char *topic, const char *message);
 };
 
 #endif // __OCFMQTT_H__
