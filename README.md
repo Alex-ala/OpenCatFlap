@@ -35,3 +35,9 @@ The 3D model is ready to be tested and a printed version is already in use to de
 **Software:**
 
 Just started working on this...
+
+
+
+Resources:
+https://app.ultralibrarian.com/details/Panasonic/AMN31112?uid=6030155
+https://github.com/davidkleymann/doit-esp32-devkit-kicad
