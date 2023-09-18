@@ -10,16 +10,16 @@ void setup() {
   Serial.setDebugOutput(true);
   OCFFilesystem::initSPIFFS();
   // start flap task
-  OCFFlapControl::init();
+  OCFFlapControl::getInstance().init();
   xTaskCreate(OCFFlapControl::loop, "flapcontrol", 10000, NULL, 3, NULL);
   // start Wifi monitor task  
-  OCFWifi::init();  
+  OCFWifi::getInstance().init();  
   xTaskCreate(OCFWifi::monitorWifi,"monitorwifi",2500,NULL, 2, NULL);
   // start Webserver task
-  OCFWebserver::init();
+  OCFWebserver::getInstance().init();
   xTaskCreate(OCFWebserver::loop, "webserver", 10000, NULL, 2, NULL);
   // start MQTT monitor task  
-  OCFMQTT::init();  
+  OCFMQTT::getInstance().init();  
   xTaskCreate(OCFMQTT::monitorMQTT,"monitormqtt",2500,NULL, 2, NULL);
 }
 

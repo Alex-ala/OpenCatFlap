@@ -26,3 +26,6 @@
 #define OCF_MQTT_CA_PATH "/mqtt_ca"
 #define OCF_MQTT_CERT_PATH "/mqtt_cert"
 #define OCF_MQTT_KEY_PATH "/mqtt_key"
+
+#define WIFI_CONFIG_FILE "/wifi_configuration.json"
+#define MQTT_CONFIG_FILE "/mqtt_configuration.json"
