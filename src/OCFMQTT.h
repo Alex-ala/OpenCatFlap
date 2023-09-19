@@ -19,28 +19,22 @@ struct MQTTConfiguration {
     bool logActivity = false;
 };
 
-// TODO: Use proper getter/setters
 class OCFMQTT{
     private:
-        static OCFMQTT ocfmqtt;
-        OCFMQTT();
-        OCFMQTT(const OCFMQTT&);
-        OCFMQTT operator=(const OCFMQTT&);
-        bool connected;
-        bool configured;
-        PubSubClient mqttclient;
-        WiFiClientSecure mqtt_secure;
-        WiFiClient mqtt;
+        static bool connected;
+        static bool configured;
+        static PubSubClient mqttclient;
+        static WiFiClientSecure mqtt_secure;
+        static WiFiClient mqtt;
     public:
-        MQTTConfiguration config;
-        static OCFMQTT& getInstance();
-        bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
-        void saveConfiguration();
-        void init();
-        bool connectMQTT();
+        static MQTTConfiguration config;
+        static bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
+        static void saveConfiguration();
+        static void init();
+        static bool connectMQTT();
         static void monitorMQTT(void* parameter);
-        void reconnect();
-        void sendMessage(const char *topic, const char *message);
+        static void reconnect();
+        static void sendMessage(const char *topic, const char *message);
 };
 
 #endif // __OCFMQTT_H__

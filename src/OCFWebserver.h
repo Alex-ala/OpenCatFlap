@@ -6,24 +6,18 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <OCFFlapControl.h>
-// TODO: Use proper getter/setters
 class OCFWebserver{
     private:
-        static OCFWebserver web;
-        OCFWebserver();
-        OCFWebserver(const OCFWebserver&);
-        OCFWebserver operator=(const OCFWebserver&);
-        WebServer server;
-        bool initialized;
+        static WebServer server;
+        static bool initialized;
     public:
-        static OCFWebserver& getInstance();
         static void handle_debug();
         static void handle_api_get();
         static void handle_api_post();
         static void handle_certs();
-        OCFDirection parseDirection(String direction);
+        static OCFDirection parseDirection(String direction);
         static void loop(void* parameter);
-        void init();
+        static void init();
 };
 
 #endif // __OCFWEBSERVER_H__

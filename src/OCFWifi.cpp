@@ -1,18 +1,10 @@
 #include <OCFWifi.h>
 
-OCFWifi OCFWifi::wifi;
-
-OCFWifi::OCFWifi() : timeClient(ntpUDP){
-    connected = false;
-    configured = false;
-    config = WifiConfiguration();
-    ntpUDP = WiFiUDP();
-    timeClient = NTPClient(ntpUDP);
-}
-
-OCFWifi& OCFWifi::getInstance(){
-    return wifi;
-}
+WiFiUDP OCFWifi::ntpUDP;
+NTPClient OCFWifi::timeClient(OCFWifi::ntpUDP);
+bool OCFWifi::configured;
+bool OCFWifi::connected;
+WifiConfiguration OCFWifi::config;
 
 // Load Wifi settings, create a configuration object and initalize state variables
 void OCFWifi::init() {
@@ -89,7 +81,7 @@ bool OCFWifi::connectWifi(){
 // If it is not connected for 30s, it tries to reset the Wifi functionality.
 void OCFWifi::monitorWifi(void* params){
     while(true){
-        while(WiFi.status() == WL_CONNECTED || !wifi.configured){
+        while(WiFi.status() == WL_CONNECTED || !configured){
             sleep(10);
         }
         log_d("Lost WiFi connection (%d), waiting...", WiFi.status());
@@ -100,14 +92,14 @@ void OCFWifi::monitorWifi(void* params){
         }
         if(WiFi.status() == WL_CONNECTED) continue;
         log_d("Wifi connection timed out (%d)", WiFi.status());
-        if(!wifi.configured){
+        if(!configured){
             log_d("Trying to restart access point");
             WiFi.softAPdisconnect();
-            wifi.setupAP();
+            setupAP();
             sleep(10);
         }else{
             log_d("Trying to reconnect to wifi");
-            wifi.reconnect();
+            reconnect();
         }
 
     }

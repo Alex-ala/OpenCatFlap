@@ -26,33 +26,28 @@ struct FlapState {
 };
 const char* DirectionString(OCFDirection dir);
 const char* StateString(OCFState state);
-// TODO: Use proper getter/setters
 class OCFFlapControl {
     private:
         static OCFFlapControl flap;
-        OCFFlapControl() {};
-        OCFFlapControl(const OCFFlapControl&);
-        OCFFlapControl operator=(const OCFFlapControl&);
-        Servo servo_in;
-        Servo servo_out;
-        int count_motion_inside;
-        int count_motion_outside;
+        static Servo servo_in;
+        static Servo servo_out;
+        static int count_motion_inside;
+        static int count_motion_outside;
     public:
-        FlapState flapState;
-        static OCFFlapControl& getInstance();
-        void init();
-        void deinit();
-        void enableServos();
-        void disableServos();
-        void moveServo(OCFDirection direction, int angle);
-        void setLockState(OCFDirection direction, OCFState state);
-        void setAllowState(OCFDirection direction, bool allowed);
-        void persistState();
-        void loadState();
-        OCFDirection detectMotion();
-        void closeAutomatically(OCFDirection d);
+        static FlapState flapState;
+        static void init();
+        static void deinit();
+        static void enableServos();
+        static void disableServos();
+        static void moveServo(OCFDirection direction, int angle);
+        static void setLockState(OCFDirection direction, OCFState state);
+        static void setAllowState(OCFDirection direction, bool allowed);
+        static void persistState();
+        static void loadState();
+        static OCFDirection detectMotion();
+        static void closeAutomatically(OCFDirection d);
         static void loop(void* parameters);
-        void getFlapStateJson(String& strOut);
-        void detectMovementOCFDirection();
+        static void getFlapStateJson(String& strOut);
+        static void detectMovementOCFDirection();
 };
 #endif // __OCFFLAPCONTROL_H__

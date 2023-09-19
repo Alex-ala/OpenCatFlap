@@ -1,7 +1,5 @@
 #include <OCFFilesystem.h>
 
-OCFFilesystem OCFFilesystem::filesystem;
-
 void OCFFilesystem::initSPIFFS(){
     if (!SPIFFS.begin(true)) {
         log_d("An error has occured while mounting SPIFFS");

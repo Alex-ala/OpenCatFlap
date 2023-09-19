@@ -15,28 +15,21 @@ struct WifiConfiguration {
     String netmask;
     String ntpServer;
 };
-// TODO: Use proper getter/setters
 class OCFWifi{
     private:
-        static OCFWifi wifi;
-        OCFWifi();
-        OCFWifi(const OCFWifi&);
-        OCFWifi operator=(const OCFWifi&);
-        WiFiUDP ntpUDP;
-        NTPClient timeClient;
-        bool configured;
-        bool connected;
-
-        WifiConfiguration config;
+        static WiFiUDP ntpUDP;
+        static NTPClient timeClient;
+        static bool configured;
+        static bool connected;
+        static WifiConfiguration config;
     public:
-        static OCFWifi& getInstance();
-        bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
-        void init();
-        void setupAP();
-        bool connectWifi();
+        static bool configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc);
+        static void init();
+        static void setupAP();
+        static bool connectWifi();
         static void monitorWifi(void* parameter);
-        void reconnect();
-        unsigned long getEpochTime();
+        static void reconnect();
+        static unsigned long getEpochTime();
 };
 
 #endif // __OCFWIFI_H__

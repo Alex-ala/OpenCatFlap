@@ -10,7 +10,6 @@
 #define OCF_MOTION_INSIDE_PIN 27
 #define OCF_MOTION_OUTSIDE_PIN 33
 #define OCF_MOTION_DELAY 200
-//#define OCF_MOTION_THRESHOLD 3000
 #define OCF_MOTION_THRESHOLD 0
 
 #define OCF_FLAPIR_OUTSIDE_PIN 34
@@ -29,3 +28,4 @@
 
 #define WIFI_CONFIG_FILE "/wifi_configuration.json"
 #define MQTT_CONFIG_FILE "/mqtt_configuration.json"
+#define CAT_CONFIG_FILE "/cat_configuration.json"

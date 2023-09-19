@@ -1,11 +1,11 @@
 #include <OCFMQTT.h>
 
-OCFMQTT OCFMQTT::ocfmqtt;
-
-OCFMQTT::OCFMQTT(){
-    connected = false;
-    configured = false;
-}
+bool OCFMQTT::connected = false;
+bool OCFMQTT::configured = false;
+PubSubClient OCFMQTT::mqttclient;
+WiFiClientSecure OCFMQTT::mqtt_secure;
+WiFiClient OCFMQTT::mqtt;
+MQTTConfiguration OCFMQTT::config;
     //TODO: This is not really a global unique variable. This exists more often (due to multiple references to htis namespace?). Consider rewriting to classes + singletons
 
     // Load Wifi settings, create a configuration object and initalize state variables
@@ -106,9 +106,9 @@ bool OCFMQTT::connectMQTT(){
 // If it is not connected for 30s, it tries to reset the Wifi functionality.
 void OCFMQTT::monitorMQTT(void* params){
     while(true){
-        while(ocfmqtt.connected || !ocfmqtt.configured){
-            if(ocfmqtt.connected) {
-                ocfmqtt.connected = ocfmqtt.mqttclient.loop();
+        while(connected || !configured){
+            if(connected) {
+                connected = mqttclient.loop();
             }
             sleep(10);
         }
@@ -116,11 +116,11 @@ void OCFMQTT::monitorMQTT(void* params){
         int max_wait = 30;
         for(int i=0;i<max_wait; i++){
             sleep(1);
-            if(ocfmqtt.connected) break;
+            if(connected) break;
         }
-        if(ocfmqtt.connected) continue;
+        if(connected) continue;
         log_d("MQTT connection timed out");
-        ocfmqtt.connectMQTT();
+        connectMQTT();
         sleep(10);
     }
     vTaskDelete(NULL);
@@ -145,8 +145,4 @@ void OCFMQTT::sendMessage(const char *topic, const char *message){
     if (!success) {
         log_d("Failed to send message to topic %s, len %d", c_topic, t.length());
     }
-}
-
-OCFMQTT& OCFMQTT::getInstance(){
-    return ocfmqtt;
 }

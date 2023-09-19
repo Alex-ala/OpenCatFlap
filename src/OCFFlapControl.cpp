@@ -1,11 +1,5 @@
 #include <OCFFlapControl.h>
 
-OCFFlapControl OCFFlapControl::flap;
-
-OCFFlapControl& OCFFlapControl::getInstance(){
-    return flap;
-}
-
 const char* DirectionString(OCFDirection dir){
     switch(dir){
         case OCFDirection::IN: return "in";
@@ -23,11 +17,11 @@ const char* StateString(OCFState state){
     }
 }
 
-Servo servo_in;
-Servo servo_out;
-FlapState flapState;
-int count_motion_inside = 0;
-int count_motion_outside = 0;
+Servo OCFFlapControl::servo_in;
+Servo OCFFlapControl::servo_out;
+FlapState OCFFlapControl::flapState;
+int OCFFlapControl::count_motion_inside = 0;
+int OCFFlapControl::count_motion_outside = 0;
 
 void OCFFlapControl::init(){
     log_d("Initializing Flapcontrol");
@@ -94,9 +88,9 @@ void OCFFlapControl::setLockState(OCFDirection direction, OCFState state){
             moveServo(direction, OCF_SERVO_IN_LOCKED);
         } 
     }
-    if (OCFMQTT::getInstance().config.logActivity){
+    if (OCFMQTT::config.logActivity){
         String s = String("{\"direction\": \"") + DirectionString(direction) + "\", \"state\": \"" + StateString(state) + "\"}";
-        OCFMQTT::getInstance().sendMessage("activity", s.c_str());
+        OCFMQTT::sendMessage("activity", s.c_str());
     }
 }
 
@@ -112,7 +106,7 @@ void OCFFlapControl::setAllowState(OCFDirection direction, bool allowed){
     persistState();
     String str;
     getFlapStateJson(str);
-    OCFMQTT::getInstance().sendMessage("status", str.c_str());
+    OCFMQTT::sendMessage("status", str.c_str());
 }
 
 void OCFFlapControl::persistState(){
@@ -150,7 +144,7 @@ OCFDirection OCFFlapControl::detectMotion(){
     int motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN);
     int motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN);
     if (motion_inside > OCF_MOTION_THRESHOLD || motion_outside > OCF_MOTION_THRESHOLD){
-        flapState.last_activity = OCFWifi::getInstance().getEpochTime();
+        flapState.last_activity = OCFWifi::getEpochTime();
     }
     if (count_motion_inside > INT_MAX - OCF_MOTION_DELAY) count_motion_inside = OCF_MOTION_DELAY;
     if (count_motion_outside > INT_MAX - OCF_MOTION_DELAY) count_motion_outside = OCF_MOTION_DELAY;
@@ -164,7 +158,7 @@ OCFDirection OCFFlapControl::detectMotion(){
 }
 
 void OCFFlapControl::closeAutomatically(OCFDirection d){
-    unsigned long time = OCFWifi::getInstance().getEpochTime();
+    unsigned long time = OCFWifi::getEpochTime();
     unsigned long diff = 0;
     diff = time - flapState.last_change_in;
     if(diff > OCF_CLOSE_AFTER_S && flapState.state_lock_in == OCFState::UNLOCKED){
@@ -239,13 +233,13 @@ void OCFFlapControl::loop(void* parameter){
             flap.flapState.active = true;
             if (d == OCFDirection::IN){
                 if (flap.flapState.allow_in) {
-                    flap.flapState.last_change_in = OCFWifi::getInstance().getEpochTime();
+                    flap.flapState.last_change_in = OCFWifi::getEpochTime();
                     if(flap.flapState.state_lock_in == OCFState::LOCKED) flap.setLockState(d, OCFState::UNLOCKED);
                 }
             }
             if (d == OCFDirection::OUT){
                 if (flap.flapState.allow_out) {
-                    flap.flapState.last_change_out = OCFWifi::getInstance().getEpochTime();
+                    flap.flapState.last_change_out = OCFWifi::getEpochTime();
                     if (flap.flapState.state_lock_out == OCFState::LOCKED) flap.setLockState(d, OCFState::UNLOCKED);
                 }
             }
@@ -255,7 +249,7 @@ void OCFFlapControl::loop(void* parameter){
         if (millis_status_update + 60000 < current_millis){
             String str;
             flap.getFlapStateJson(str);
-            OCFMQTT::getInstance().sendMessage("status", str.c_str());
+            OCFMQTT::sendMessage("status", str.c_str());
             millis_status_update = current_millis;
         }
         vTaskDelay(1);
