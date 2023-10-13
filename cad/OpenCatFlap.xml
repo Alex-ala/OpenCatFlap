@@ -1,0 +1,977 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>C:\Users\alex\Documents\Git\OpenCatFlap\cad\OpenCatFlap.kicad_sch</source>
+    <date>10/10/2023 21:18:30</date>
+    <tool>Eeschema 7.0.1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>OpenCatFlap.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>220pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2ac314b3-bf1d-49ec-845a-7ec464f96e80</tstamps>
+    </comp>
+    <comp ref="C2">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d611cff4-8708-4c15-b380-ac83e3ea7785</tstamps>
+    </comp>
+    <comp ref="C3">
+      <value>22uF</value>
+      <footprint>Capacitor_SMD:CP_Elec_8x10</footprint>
+      <fields>
+        <field name="Field4">Polarized</field>
+      </fields>
+      <libsource lib="Device" part="C_Polarized" description="Polarized capacitor"/>
+      <property name="Field4" value="Polarized"/>
+      <property name="Field" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Polarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d9fde20b-01e3-4987-8948-802925957e76</tstamps>
+    </comp>
+    <comp ref="C4">
+      <value>220pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f9cd3ff6-24ac-4ef6-982b-e60d8987c0ff</tstamps>
+    </comp>
+    <comp ref="C5">
+      <value>3.3nF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>334da53c-0697-4afc-958c-fe6d9f0bc899</tstamps>
+    </comp>
+    <comp ref="C6">
+      <value>3.3nF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0a3f325d-ab31-42ba-a4ac-1a7c303ec2cd</tstamps>
+    </comp>
+    <comp ref="C7">
+      <value>220pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e5db0c37-0f4b-4734-b55c-7ae128ccbd1d</tstamps>
+    </comp>
+    <comp ref="C8">
+      <value>220pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bc294e57-d02a-4cc7-8929-4bed073fee10</tstamps>
+    </comp>
+    <comp ref="C9">
+      <value>10pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4eecfb32-3db3-42ae-8b9f-3aae8cd915a7</tstamps>
+    </comp>
+    <comp ref="C10">
+      <value>10pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>294812c0-893b-420b-94d7-04f746ab93b4</tstamps>
+    </comp>
+    <comp ref="C11">
+      <value>10pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>47dae3e3-bed8-467c-8d08-79dccd60e766</tstamps>
+    </comp>
+    <comp ref="C12">
+      <value>10pF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1a18c166-243e-4915-90af-385314af7438</tstamps>
+    </comp>
+    <comp ref="P1">
+      <value>Outside PIR</value>
+      <footprint>OpenCatFlap:PIR Header</footprint>
+      <libsource lib="OpenCatFlap" part="PIR Header" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6506be40-f9f3-4ff7-9635-9afeef0e20ff</tstamps>
+    </comp>
+    <comp ref="P2">
+      <value>IR Barrier Outside</value>
+      <footprint>OpenCatFlap:IR Barrier Header</footprint>
+      <libsource lib="OpenCatFlap" part="IR_Barrier_Header" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7acad8f1-05f4-4714-9bae-523cb8712865</tstamps>
+    </comp>
+    <comp ref="P3">
+      <value>IR Barrier Inside</value>
+      <footprint>OpenCatFlap:IR Barrier Header</footprint>
+      <libsource lib="OpenCatFlap" part="IR_Barrier_Header" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ff217998-3b46-43a4-9c5a-2a31c2b6a5a0</tstamps>
+    </comp>
+    <comp ref="P4">
+      <value>Servo Outside</value>
+      <footprint>OpenCatFlap:Servo Header</footprint>
+      <libsource lib="OpenCatFlap" part="Servo_Header" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>287e0aac-faf3-4989-b82b-21104018b61f</tstamps>
+    </comp>
+    <comp ref="P5">
+      <value>Servo Inside</value>
+      <footprint>OpenCatFlap:Servo Header</footprint>
+      <libsource lib="OpenCatFlap" part="Servo_Header" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8ab559c1-aae9-42eb-a156-465edbeec049</tstamps>
+    </comp>
+    <comp ref="R1">
+      <value>100R</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cb8f7baf-97ed-4d44-b049-4f23f8ea1b96</tstamps>
+    </comp>
+    <comp ref="R2">
+      <value>100k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>88a134cf-2e1f-4111-b13d-3cc0ead4e074</tstamps>
+    </comp>
+    <comp ref="R3">
+      <value>100k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>604074c0-a29d-4485-9b69-60b43024d4c1</tstamps>
+    </comp>
+    <comp ref="R4">
+      <value>100R</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>9cc078e9-28d3-4696-989a-bb1454dff958</tstamps>
+    </comp>
+    <comp ref="R5">
+      <value>100R</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cbdeabb6-b486-4e81-aa7a-a1a8738d7064</tstamps>
+    </comp>
+    <comp ref="R6">
+      <value>100R</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0c508cca-f63e-464b-bf79-d1e820a4cf1b</tstamps>
+    </comp>
+    <comp ref="R7">
+      <value>220</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d1c330cc-3469-4283-bade-8b3304ec825c</tstamps>
+    </comp>
+    <comp ref="R8">
+      <value>47k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fe8bdd3d-260a-4d18-a942-25e4f4327fe0</tstamps>
+    </comp>
+    <comp ref="R9">
+      <value>150k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5fc550cb-ced7-4d71-a549-bef442a14935</tstamps>
+    </comp>
+    <comp ref="R10">
+      <value>4.7</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>97d7882a-01b2-4a7e-8073-254a52c179c5</tstamps>
+    </comp>
+    <comp ref="R11">
+      <value>4.7</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c6637d99-7d6f-478c-9565-905fb0100d83</tstamps>
+    </comp>
+    <comp ref="R12">
+      <value>150k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5be1fd36-2957-427b-a17b-9f706066dc3b</tstamps>
+    </comp>
+    <comp ref="R13">
+      <value>47k</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>9dd4b82c-0153-4a5d-b57d-f9aa871539cc</tstamps>
+    </comp>
+    <comp ref="R14">
+      <value>4.7</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f24c4b47-3bb2-496b-91ba-1377195a195a</tstamps>
+    </comp>
+    <comp ref="R15">
+      <value>4.7</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8ab7e69f-5080-4a22-9ad1-ddb89fcc44a3</tstamps>
+    </comp>
+    <comp ref="R16">
+      <value>220</value>
+      <footprint>Resistor_SMD:R_0805_2012Metric</footprint>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e0a252aa-5cc0-4627-9f1a-9a1f807f9141</tstamps>
+    </comp>
+    <comp ref="U1">
+      <value>DOIT-ESP32-DEVKIT-V1</value>
+      <footprint>OpenCatFlap:ESP32-DOIT-DEVKIT</footprint>
+      <libsource lib="OpenCatFlap" part="DOIT-ESP32-DEVKIT-V1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bd3416e3-4da5-41da-8dd5-8e2c90148a9c</tstamps>
+    </comp>
+    <comp ref="U2">
+      <value>AMN33111</value>
+      <footprint>OpenCatFlap:AMN33111_PAN</footprint>
+      <datasheet>AMN33111</datasheet>
+      <libsource lib="OpenCatFlap" part="AMN33111" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_keywords" value="AMN33111"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1db6ab9f-2afd-4d12-8f29-b86f5dd93c28</tstamps>
+    </comp>
+    <comp ref="U3">
+      <value>5V</value>
+      <footprint>OpenCatFlap:Power Header</footprint>
+      <libsource lib="OpenCatFlap" part="Power_Plug" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2757fd43-a992-475e-8bf7-d6c28d11e6ff</tstamps>
+    </comp>
+    <comp ref="U4">
+      <value>TMS3705DDRQ1</value>
+      <footprint>D16</footprint>
+      <datasheet>TMS3705DDRQ1</datasheet>
+      <libsource lib="OpenCatFlap" part="TMS3705DDRQ1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_keywords" value="TMS3705DDRQ1"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4056e6a2-1ba0-4c2c-94fd-369753291e0c</tstamps>
+    </comp>
+    <comp ref="U5">
+      <value>~</value>
+      <footprint>OpenCatFlap:Power Header</footprint>
+      <libsource lib="" part="Power_Plug_1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b6e82299-4ec9-45da-beaa-5b5c471391db</tstamps>
+    </comp>
+    <comp ref="U6">
+      <value>~</value>
+      <footprint>OpenCatFlap:Power Header</footprint>
+      <libsource lib="" part="Power_Plug_1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a1fb48fa-a46b-451c-b1b8-b5c06ea94918</tstamps>
+    </comp>
+    <comp ref="U7">
+      <value>TMS3705DDRQ1</value>
+      <footprint>D16</footprint>
+      <datasheet>TMS3705DDRQ1</datasheet>
+      <libsource lib="OpenCatFlap" part="TMS3705DDRQ1" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_keywords" value="TMS3705DDRQ1"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>84161686-bf90-4e4e-934e-873e7df29011</tstamps>
+    </comp>
+    <comp ref="Y1">
+      <value>Crystal 4MHz</value>
+      <footprint>Crystal:Crystal_HC49-4H_Vertical</footprint>
+      <libsource lib="Device" part="Crystal" description="Two pin crystal"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Two pin crystal"/>
+      <property name="ki_keywords" value="quartz ceramic resonator oscillator"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a3a2fa35-7dde-41d1-b7c9-ce8eb1820d16</tstamps>
+    </comp>
+    <comp ref="Y2">
+      <value>Crystal 4MHz</value>
+      <footprint>Crystal:Crystal_HC49-4H_Vertical</footprint>
+      <libsource lib="Device" part="Crystal" description="Two pin crystal"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="OpenCatFlap.kicad_sch"/>
+      <property name="ki_description" value="Two pin crystal"/>
+      <property name="ki_keywords" value="quartz ceramic resonator oscillator"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f765416d-8831-4c2d-b83d-d6361d936ff6</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="" part="Power_Plug_1">
+      <fields>
+        <field name="Reference">U</field>
+      </fields>
+      <pins>
+        <pin num="1" name="5V+" type="power_in"/>
+        <pin num="2" name="GND" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C_Polarized">
+      <description>Polarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>CP_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C_Polarized</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="Crystal">
+      <description>Two pin crystal</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Crystal*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Y</field>
+        <field name="Value">Crystal</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="AMN33111">
+      <docs>AMN33111</docs>
+      <footprints>
+        <fp>AMN33111_PAN</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">AMN33111</field>
+        <field name="Footprint">AMN33111_PAN</field>
+        <field name="Datasheet">AMN33111</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_out"/>
+        <pin num="2" name="OUT" type="output"/>
+        <pin num="3" name="VDD" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="DOIT-ESP32-DEVKIT-V1">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">DOIT-ESP32-DEVKIT-V1</field>
+      </fields>
+      <pins>
+        <pin num="1" name="EN" type="output"/>
+        <pin num="2" name="GPIO36_ADC-CH0_SENS-VP_RTC-GPIO0" type="bidirectional"/>
+        <pin num="3" name="GPIO39_ADC1-CH3_SENS-VN_RTC-GPIO3" type="bidirectional"/>
+        <pin num="4" name="GPIO34_ADC1-CH6_RTC-GPIO4" type="bidirectional"/>
+        <pin num="5" name="GPIO35_ADC1-CH7_RTC-GPIO5" type="bidirectional"/>
+        <pin num="6" name="GPIO32_ADC1-CH4_RTC-GPIO9" type="bidirectional"/>
+        <pin num="7" name="GPIO33_ADC1-CH5_RTC-GPIO8" type="bidirectional"/>
+        <pin num="8" name="GPIO25_ADC2-CH8_DAC1_RTC-GPIO6" type="bidirectional"/>
+        <pin num="9" name="GPIO26_ADC2-CH9_DAC2_RTC-GPIO7" type="bidirectional"/>
+        <pin num="10" name="GPIO27_ADC2-CH7_RTC-GPIO17" type="bidirectional"/>
+        <pin num="11" name="GPIO14_ADC2-CH6_HSPI-CLK_RTC-GPIO16" type="bidirectional"/>
+        <pin num="12" name="GPIO12_ADC2-CH5_HSPI-MISO_RTC-GPIO15" type="bidirectional"/>
+        <pin num="13" name="GPIO13_ADC2-CH4_HSPI-MOSI_RTC-GPIO14" type="bidirectional"/>
+        <pin num="14" name="GPIO9_SHD/SD2" type="unspecified"/>
+        <pin num="15" name="GPIO10_SWP/SD3" type="unspecified"/>
+        <pin num="16" name="GPIO11_CSC/CMD" type="unspecified"/>
+        <pin num="17" name="GND" type="bidirectional"/>
+        <pin num="18" name="VIN" type="bidirectional"/>
+        <pin num="19" name="3V3" type="output"/>
+        <pin num="20" name="GPIO6_SCK/CLK" type="unspecified"/>
+        <pin num="21" name="GPIO7_SDO/SD0" type="unspecified"/>
+        <pin num="22" name="GPIO8_SDI/SD1" type="unspecified"/>
+        <pin num="23" name="GPIO0_ADC2-CH1_RTC-GPIO11" type="bidirectional"/>
+        <pin num="24" name="GPIO15_ADC2-CH3_HSPI-CS0_RTC-GPIO13" type="bidirectional"/>
+        <pin num="25" name="GPIO2_ADC2-CH2_RTC-GPIO12" type="bidirectional"/>
+        <pin num="26" name="GPIO4_ADC2-CH0_RTC-GPIO10" type="bidirectional"/>
+        <pin num="27" name="GPIO16_UART2-RX" type="bidirectional"/>
+        <pin num="28" name="GPIO17_UART2-TX" type="bidirectional"/>
+        <pin num="29" name="GPIO5_VSPI-CS0" type="bidirectional"/>
+        <pin num="30" name="GPIO18_VSPI-CLK" type="bidirectional"/>
+        <pin num="31" name="GPIO19_VSPI-MISO" type="bidirectional"/>
+        <pin num="32" name="GPIO21_I2C-SDA" type="bidirectional"/>
+        <pin num="33" name="GPIO3__UART0-RX" type="bidirectional"/>
+        <pin num="34" name="GPIO1_UART0-TX" type="bidirectional"/>
+        <pin num="35" name="GPIO22_I2C-SCL" type="bidirectional"/>
+        <pin num="36" name="GPIO23_VSPI-MOSI" type="bidirectional"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="IR_Barrier_Header">
+      <fields>
+        <field name="Reference">P</field>
+      </fields>
+      <pins>
+        <pin num="1" name="E+" type="power_out"/>
+        <pin num="2" name="E-" type="power_out"/>
+        <pin num="3" name="D+" type="power_out"/>
+        <pin num="4" name="D-" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="PIR Header">
+      <fields>
+        <field name="Reference">P</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VCC" type="power_out"/>
+        <pin num="2" name="GND" type="power_out"/>
+        <pin num="3" name="In" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="Power_Plug">
+      <fields>
+        <field name="Reference">U</field>
+      </fields>
+      <pins>
+        <pin num="1" name="5V+" type="power_in"/>
+        <pin num="2" name="GND" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="Servo_Header">
+      <fields>
+        <field name="Reference">P</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VCC" type="power_out"/>
+        <pin num="2" name="GND" type="power_out"/>
+        <pin num="3" name="PWM" type="output"/>
+      </pins>
+    </libpart>
+    <libpart lib="OpenCatFlap" part="TMS3705DDRQ1">
+      <docs>TMS3705DDRQ1</docs>
+      <footprints>
+        <fp>D16</fp>
+        <fp>D16-M</fp>
+        <fp>D16-L</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TMS3705DDRQ1</field>
+        <field name="Footprint">D16</field>
+        <field name="Datasheet">TMS3705DDRQ1</field>
+      </fields>
+      <pins>
+        <pin num="1" name="SENSE" type="input"/>
+        <pin num="2" name="SFB" type="output"/>
+        <pin num="3" name="D_TST" type="output"/>
+        <pin num="4" name="A_TST" type="output"/>
+        <pin num="5" name="ANT1" type="output"/>
+        <pin num="6" name="VSSA" type="power_in"/>
+        <pin num="7" name="ANT2" type="output"/>
+        <pin num="8" name="VDDA" type="power_in"/>
+        <pin num="9" name="VDD" type="power_in"/>
+        <pin num="10" name="OSC2" type="output"/>
+        <pin num="11" name="OSC1" type="input"/>
+        <pin num="12" name="VSS/VSSB" type="power_in"/>
+        <pin num="13" name="NC" type="no_connect"/>
+        <pin num="14" name="SCIO" type="bidirectional"/>
+        <pin num="15" name="F_SEL" type="input"/>
+        <pin num="16" name="TXCT" type="input"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Device">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Device.kicad_sym</uri>
+    </library>
+    <library logical="OpenCatFlap">
+      <uri>C:\Users\alex\Documents\Git\OpenCatFlap\cad/OpenCatFlap.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="+5V">
+      <node ref="C2" pin="2" pintype="passive"/>
+      <node ref="C3" pin="1" pintype="passive"/>
+      <node ref="P1" pin="1" pinfunction="VCC" pintype="power_out"/>
+      <node ref="P2" pin="1" pinfunction="E+" pintype="power_out"/>
+      <node ref="P2" pin="3" pinfunction="D+" pintype="power_out"/>
+      <node ref="P3" pin="1" pinfunction="E+" pintype="power_out"/>
+      <node ref="P3" pin="3" pinfunction="D+" pintype="power_out"/>
+      <node ref="P4" pin="1" pinfunction="VCC" pintype="power_out"/>
+      <node ref="P5" pin="1" pinfunction="VCC" pintype="power_out"/>
+      <node ref="U1" pin="18" pinfunction="VIN" pintype="bidirectional"/>
+      <node ref="U2" pin="3" pinfunction="VDD" pintype="power_in"/>
+      <node ref="U3" pin="1" pinfunction="5V+" pintype="power_in"/>
+      <node ref="U4" pin="15" pinfunction="F_SEL" pintype="input"/>
+      <node ref="U4" pin="8" pinfunction="VDDA" pintype="power_in"/>
+      <node ref="U4" pin="9" pinfunction="VDD" pintype="power_in"/>
+      <node ref="U7" pin="15" pinfunction="F_SEL" pintype="input"/>
+      <node ref="U7" pin="8" pinfunction="VDDA" pintype="power_in"/>
+      <node ref="U7" pin="9" pinfunction="VDD" pintype="power_in"/>
+    </net>
+    <net code="2" name="GND">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="C10" pin="2" pintype="passive"/>
+      <node ref="C11" pin="2" pintype="passive"/>
+      <node ref="C12" pin="2" pintype="passive"/>
+      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="C3" pin="2" pintype="passive"/>
+      <node ref="C4" pin="1" pintype="passive"/>
+      <node ref="C7" pin="2" pintype="passive"/>
+      <node ref="C8" pin="1" pintype="passive"/>
+      <node ref="C9" pin="2" pintype="passive"/>
+      <node ref="P1" pin="2" pinfunction="GND" pintype="power_out"/>
+      <node ref="P4" pin="2" pinfunction="GND" pintype="power_out"/>
+      <node ref="P5" pin="2" pinfunction="GND" pintype="power_out"/>
+      <node ref="R1" pin="1" pintype="passive"/>
+      <node ref="R2" pin="1" pintype="passive"/>
+      <node ref="R3" pin="1" pintype="passive"/>
+      <node ref="R4" pin="1" pintype="passive"/>
+      <node ref="R5" pin="1" pintype="passive"/>
+      <node ref="R6" pin="2" pintype="passive"/>
+      <node ref="U1" pin="17" pinfunction="GND" pintype="bidirectional"/>
+      <node ref="U2" pin="1" pinfunction="GND" pintype="power_out"/>
+      <node ref="U3" pin="2" pinfunction="GND" pintype="power_in"/>
+      <node ref="U4" pin="12" pinfunction="VSS/VSSB" pintype="power_in"/>
+      <node ref="U4" pin="6" pinfunction="VSSA" pintype="power_in"/>
+      <node ref="U7" pin="12" pinfunction="VSS/VSSB" pintype="power_in"/>
+      <node ref="U7" pin="6" pinfunction="VSSA" pintype="power_in"/>
+    </net>
+    <net code="3" name="Net-(C4-Pad2)">
+      <node ref="C4" pin="2" pintype="passive"/>
+      <node ref="C5" pin="2" pintype="passive"/>
+      <node ref="R11" pin="2" pintype="passive"/>
+    </net>
+    <net code="4" name="Net-(C6-Pad2)">
+      <node ref="C6" pin="2" pintype="passive"/>
+      <node ref="C8" pin="2" pintype="passive"/>
+      <node ref="R15" pin="2" pintype="passive"/>
+    </net>
+    <net code="5" name="Net-(P1-In)">
+      <node ref="P1" pin="3" pinfunction="In" pintype="input"/>
+      <node ref="R3" pin="2" pintype="passive"/>
+      <node ref="U1" pin="7" pinfunction="GPIO33_ADC1-CH5_RTC-GPIO8" pintype="bidirectional"/>
+    </net>
+    <net code="6" name="Net-(P2-D-)">
+      <node ref="P2" pin="4" pinfunction="D-" pintype="input"/>
+      <node ref="R6" pin="1" pintype="passive"/>
+      <node ref="U1" pin="4" pinfunction="GPIO34_ADC1-CH6_RTC-GPIO4" pintype="bidirectional"/>
+    </net>
+    <net code="7" name="Net-(P2-E-)">
+      <node ref="P2" pin="2" pinfunction="E-" pintype="power_out"/>
+      <node ref="R1" pin="2" pintype="passive"/>
+    </net>
+    <net code="8" name="Net-(P3-D-)">
+      <node ref="P3" pin="4" pinfunction="D-" pintype="input"/>
+      <node ref="R5" pin="2" pintype="passive"/>
+      <node ref="U1" pin="5" pinfunction="GPIO35_ADC1-CH7_RTC-GPIO5" pintype="bidirectional"/>
+    </net>
+    <net code="9" name="Net-(P3-E-)">
+      <node ref="P3" pin="2" pinfunction="E-" pintype="power_out"/>
+      <node ref="R4" pin="2" pintype="passive"/>
+    </net>
+    <net code="10" name="Net-(P4-PWM)">
+      <node ref="P4" pin="3" pinfunction="PWM" pintype="output"/>
+      <node ref="U1" pin="12" pinfunction="GPIO12_ADC2-CH5_HSPI-MISO_RTC-GPIO15" pintype="bidirectional"/>
+    </net>
+    <net code="11" name="Net-(P5-PWM)">
+      <node ref="P5" pin="3" pinfunction="PWM" pintype="output"/>
+      <node ref="U1" pin="13" pinfunction="GPIO13_ADC2-CH4_HSPI-MOSI_RTC-GPIO14" pintype="bidirectional"/>
+    </net>
+    <net code="12" name="Net-(U1-GPIO3__UART0-RX)">
+      <node ref="R16" pin="1" pintype="passive"/>
+      <node ref="U1" pin="33" pinfunction="GPIO3__UART0-RX" pintype="bidirectional"/>
+    </net>
+    <net code="13" name="Net-(U1-GPIO9_SHD{slash}SD2)">
+      <node ref="U1" pin="14" pinfunction="GPIO9_SHD/SD2" pintype="unspecified"/>
+      <node ref="U4" pin="16" pinfunction="TXCT" pintype="input"/>
+    </net>
+    <net code="14" name="Net-(U1-GPIO16_UART2-RX)">
+      <node ref="R7" pin="2" pintype="passive"/>
+      <node ref="U1" pin="27" pinfunction="GPIO16_UART2-RX" pintype="bidirectional"/>
+    </net>
+    <net code="15" name="Net-(U1-GPIO22_I2C-SCL)">
+      <node ref="U1" pin="35" pinfunction="GPIO22_I2C-SCL" pintype="bidirectional"/>
+      <node ref="U7" pin="16" pinfunction="TXCT" pintype="input"/>
+    </net>
+    <net code="16" name="Net-(U1-GPIO27_ADC2-CH7_RTC-GPIO17)">
+      <node ref="R2" pin="2" pintype="passive"/>
+      <node ref="U1" pin="10" pinfunction="GPIO27_ADC2-CH7_RTC-GPIO17" pintype="bidirectional"/>
+      <node ref="U2" pin="2" pinfunction="OUT" pintype="output"/>
+    </net>
+    <net code="17" name="Net-(U4-ANT1)">
+      <node ref="R10" pin="1" pintype="passive"/>
+      <node ref="U4" pin="5" pinfunction="ANT1" pintype="output"/>
+    </net>
+    <net code="18" name="Net-(U4-ANT2)">
+      <node ref="R11" pin="1" pintype="passive"/>
+      <node ref="U4" pin="7" pinfunction="ANT2" pintype="output"/>
+    </net>
+    <net code="19" name="Net-(U4-OSC1)">
+      <node ref="C11" pin="1" pintype="passive"/>
+      <node ref="U4" pin="11" pinfunction="OSC1" pintype="input"/>
+      <node ref="Y2" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="20" name="Net-(U4-OSC2)">
+      <node ref="C12" pin="1" pintype="passive"/>
+      <node ref="U4" pin="10" pinfunction="OSC2" pintype="output"/>
+      <node ref="Y2" pin="2" pinfunction="2" pintype="passive"/>
+    </net>
+    <net code="21" name="Net-(U4-SCIO)">
+      <node ref="R7" pin="1" pintype="passive"/>
+      <node ref="U4" pin="14" pinfunction="SCIO" pintype="bidirectional"/>
+    </net>
+    <net code="22" name="Net-(U4-SENSE)">
+      <node ref="R8" pin="1" pintype="passive"/>
+      <node ref="R9" pin="2" pintype="passive"/>
+      <node ref="U4" pin="1" pinfunction="SENSE" pintype="input"/>
+    </net>
+    <net code="23" name="Net-(U4-SFB)">
+      <node ref="R9" pin="1" pintype="passive"/>
+      <node ref="U4" pin="2" pinfunction="SFB" pintype="output"/>
+    </net>
+    <net code="24" name="Net-(U5-5V+)">
+      <node ref="C5" pin="1" pintype="passive"/>
+      <node ref="R8" pin="2" pintype="passive"/>
+      <node ref="U5" pin="1" pinfunction="5V+" pintype="power_in"/>
+    </net>
+    <net code="25" name="Net-(U5-GND)">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="R10" pin="2" pintype="passive"/>
+      <node ref="U5" pin="2" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="26" name="Net-(U6-5V+)">
+      <node ref="C6" pin="1" pintype="passive"/>
+      <node ref="R13" pin="2" pintype="passive"/>
+      <node ref="U6" pin="1" pinfunction="5V+" pintype="power_in"/>
+    </net>
+    <net code="27" name="Net-(U6-GND)">
+      <node ref="C7" pin="1" pintype="passive"/>
+      <node ref="R14" pin="2" pintype="passive"/>
+      <node ref="U6" pin="2" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="28" name="Net-(U7-ANT1)">
+      <node ref="R14" pin="1" pintype="passive"/>
+      <node ref="U7" pin="5" pinfunction="ANT1" pintype="output"/>
+    </net>
+    <net code="29" name="Net-(U7-ANT2)">
+      <node ref="R15" pin="1" pintype="passive"/>
+      <node ref="U7" pin="7" pinfunction="ANT2" pintype="output"/>
+    </net>
+    <net code="30" name="Net-(U7-OSC1)">
+      <node ref="C10" pin="1" pintype="passive"/>
+      <node ref="U7" pin="11" pinfunction="OSC1" pintype="input"/>
+      <node ref="Y1" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="31" name="Net-(U7-OSC2)">
+      <node ref="C9" pin="1" pintype="passive"/>
+      <node ref="U7" pin="10" pinfunction="OSC2" pintype="output"/>
+      <node ref="Y1" pin="2" pinfunction="2" pintype="passive"/>
+    </net>
+    <net code="32" name="Net-(U7-SCIO)">
+      <node ref="R16" pin="2" pintype="passive"/>
+      <node ref="U7" pin="14" pinfunction="SCIO" pintype="bidirectional"/>
+    </net>
+    <net code="33" name="Net-(U7-SENSE)">
+      <node ref="R12" pin="2" pintype="passive"/>
+      <node ref="R13" pin="1" pintype="passive"/>
+      <node ref="U7" pin="1" pinfunction="SENSE" pintype="input"/>
+    </net>
+    <net code="34" name="Net-(U7-SFB)">
+      <node ref="R12" pin="1" pintype="passive"/>
+      <node ref="U7" pin="2" pinfunction="SFB" pintype="output"/>
+    </net>
+    <net code="35" name="unconnected-(U1-3V3-Pad19)">
+      <node ref="U1" pin="19" pinfunction="3V3" pintype="output"/>
+    </net>
+    <net code="36" name="unconnected-(U1-EN-Pad1)">
+      <node ref="U1" pin="1" pinfunction="EN" pintype="output"/>
+    </net>
+    <net code="37" name="unconnected-(U1-GPIO0_ADC2-CH1_RTC-GPIO11-Pad23)">
+      <node ref="U1" pin="23" pinfunction="GPIO0_ADC2-CH1_RTC-GPIO11" pintype="bidirectional"/>
+    </net>
+    <net code="38" name="unconnected-(U1-GPIO1_UART0-TX-Pad34)">
+      <node ref="U1" pin="34" pinfunction="GPIO1_UART0-TX" pintype="bidirectional"/>
+    </net>
+    <net code="39" name="unconnected-(U1-GPIO2_ADC2-CH2_RTC-GPIO12-Pad25)">
+      <node ref="U1" pin="25" pinfunction="GPIO2_ADC2-CH2_RTC-GPIO12" pintype="bidirectional"/>
+    </net>
+    <net code="40" name="unconnected-(U1-GPIO4_ADC2-CH0_RTC-GPIO10-Pad26)">
+      <node ref="U1" pin="26" pinfunction="GPIO4_ADC2-CH0_RTC-GPIO10" pintype="bidirectional"/>
+    </net>
+    <net code="41" name="unconnected-(U1-GPIO5_VSPI-CS0-Pad29)">
+      <node ref="U1" pin="29" pinfunction="GPIO5_VSPI-CS0" pintype="bidirectional"/>
+    </net>
+    <net code="42" name="unconnected-(U1-GPIO6_SCK{slash}CLK-Pad20)">
+      <node ref="U1" pin="20" pinfunction="GPIO6_SCK/CLK" pintype="unspecified"/>
+    </net>
+    <net code="43" name="unconnected-(U1-GPIO7_SDO{slash}SD0-Pad21)">
+      <node ref="U1" pin="21" pinfunction="GPIO7_SDO/SD0" pintype="unspecified"/>
+    </net>
+    <net code="44" name="unconnected-(U1-GPIO8_SDI{slash}SD1-Pad22)">
+      <node ref="U1" pin="22" pinfunction="GPIO8_SDI/SD1" pintype="unspecified"/>
+    </net>
+    <net code="45" name="unconnected-(U1-GPIO10_SWP{slash}SD3-Pad15)">
+      <node ref="U1" pin="15" pinfunction="GPIO10_SWP/SD3" pintype="unspecified"/>
+    </net>
+    <net code="46" name="unconnected-(U1-GPIO11_CSC{slash}CMD-Pad16)">
+      <node ref="U1" pin="16" pinfunction="GPIO11_CSC/CMD" pintype="unspecified"/>
+    </net>
+    <net code="47" name="unconnected-(U1-GPIO14_ADC2-CH6_HSPI-CLK_RTC-GPIO16-Pad11)">
+      <node ref="U1" pin="11" pinfunction="GPIO14_ADC2-CH6_HSPI-CLK_RTC-GPIO16" pintype="bidirectional"/>
+    </net>
+    <net code="48" name="unconnected-(U1-GPIO15_ADC2-CH3_HSPI-CS0_RTC-GPIO13-Pad24)">
+      <node ref="U1" pin="24" pinfunction="GPIO15_ADC2-CH3_HSPI-CS0_RTC-GPIO13" pintype="bidirectional"/>
+    </net>
+    <net code="49" name="unconnected-(U1-GPIO17_UART2-TX-Pad28)">
+      <node ref="U1" pin="28" pinfunction="GPIO17_UART2-TX" pintype="bidirectional"/>
+    </net>
+    <net code="50" name="unconnected-(U1-GPIO18_VSPI-CLK-Pad30)">
+      <node ref="U1" pin="30" pinfunction="GPIO18_VSPI-CLK" pintype="bidirectional"/>
+    </net>
+    <net code="51" name="unconnected-(U1-GPIO19_VSPI-MISO-Pad31)">
+      <node ref="U1" pin="31" pinfunction="GPIO19_VSPI-MISO" pintype="bidirectional"/>
+    </net>
+    <net code="52" name="unconnected-(U1-GPIO21_I2C-SDA-Pad32)">
+      <node ref="U1" pin="32" pinfunction="GPIO21_I2C-SDA" pintype="bidirectional"/>
+    </net>
+    <net code="53" name="unconnected-(U1-GPIO23_VSPI-MOSI-Pad36)">
+      <node ref="U1" pin="36" pinfunction="GPIO23_VSPI-MOSI" pintype="bidirectional"/>
+    </net>
+    <net code="54" name="unconnected-(U1-GPIO25_ADC2-CH8_DAC1_RTC-GPIO6-Pad8)">
+      <node ref="U1" pin="8" pinfunction="GPIO25_ADC2-CH8_DAC1_RTC-GPIO6" pintype="bidirectional"/>
+    </net>
+    <net code="55" name="unconnected-(U1-GPIO26_ADC2-CH9_DAC2_RTC-GPIO7-Pad9)">
+      <node ref="U1" pin="9" pinfunction="GPIO26_ADC2-CH9_DAC2_RTC-GPIO7" pintype="bidirectional"/>
+    </net>
+    <net code="56" name="unconnected-(U1-GPIO32_ADC1-CH4_RTC-GPIO9-Pad6)">
+      <node ref="U1" pin="6" pinfunction="GPIO32_ADC1-CH4_RTC-GPIO9" pintype="bidirectional"/>
+    </net>
+    <net code="57" name="unconnected-(U1-GPIO36_ADC-CH0_SENS-VP_RTC-GPIO0-Pad2)">
+      <node ref="U1" pin="2" pinfunction="GPIO36_ADC-CH0_SENS-VP_RTC-GPIO0" pintype="bidirectional"/>
+    </net>
+    <net code="58" name="unconnected-(U1-GPIO39_ADC1-CH3_SENS-VN_RTC-GPIO3-Pad3)">
+      <node ref="U1" pin="3" pinfunction="GPIO39_ADC1-CH3_SENS-VN_RTC-GPIO3" pintype="bidirectional"/>
+    </net>
+    <net code="59" name="unconnected-(U4-A_TST-Pad4)">
+      <node ref="U4" pin="4" pinfunction="A_TST" pintype="output"/>
+    </net>
+    <net code="60" name="unconnected-(U4-D_TST-Pad3)">
+      <node ref="U4" pin="3" pinfunction="D_TST" pintype="output"/>
+    </net>
+    <net code="61" name="unconnected-(U4-NC-Pad13)">
+      <node ref="U4" pin="13" pinfunction="NC" pintype="no_connect"/>
+    </net>
+    <net code="62" name="unconnected-(U7-A_TST-Pad4)">
+      <node ref="U7" pin="4" pinfunction="A_TST" pintype="output"/>
+    </net>
+    <net code="63" name="unconnected-(U7-D_TST-Pad3)">
+      <node ref="U7" pin="3" pinfunction="D_TST" pintype="output"/>
+    </net>
+    <net code="64" name="unconnected-(U7-NC-Pad13)">
+      <node ref="U7" pin="13" pinfunction="NC" pintype="no_connect"/>
+    </net>
+  </nets>
+</export>
