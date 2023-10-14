@@ -30,6 +30,13 @@ Pretty much decided on the Hardware for now. It will base on an ESP32 with vario
 
 The 3D model is ready to be tested and a printed version is already in use to debug the code.
 
+Used vital parts:
+    2x PIR (motion detection): Panasonic AMN31112
+    2x light barrier for flap detection: TCST 1103
+    2x RFID reader: TBD
+    2x Servo: DSM44
+
+
 ![Bad schematics](opencatflap.drawio.svg)
 
 **Software:**
