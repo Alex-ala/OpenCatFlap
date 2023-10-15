@@ -2,7 +2,6 @@
 #define __OCFCAT_H__
 
 #include <OCFFlapControl.h>
-#include <unordered_map>
 
 struct OCFCat{
     OCFDirection location {OCFDirection::NONE};

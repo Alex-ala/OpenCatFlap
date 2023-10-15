@@ -1,5 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "2023-10-10_16-55-29")(type "KiCad")(uri "C:/Users/alex/Downloads/ul_TMS3705DDRQ1/KiCADv6/2023-10-10_16-55-29.kicad_sym")(options "")(descr ""))
-  (lib (name "OpenCatFlap")(type "KiCad")(uri "${KIPRJMOD}/OpenCatFlap.kicad_sym")(options "")(descr ""))
-)
