@@ -7,3 +7,4 @@ data/wifi_configuration.json
 cad/gerber*
 cad/*backups
 cad/fp-info-cache*
+cad/OpenCatFlap.pretty*
