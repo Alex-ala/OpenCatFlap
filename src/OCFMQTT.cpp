@@ -6,9 +6,7 @@ PubSubClient OCFMQTT::mqttclient;
 WiFiClientSecure OCFMQTT::mqtt_secure;
 WiFiClient OCFMQTT::mqtt;
 MQTTConfiguration OCFMQTT::config;
-    //TODO: This is not really a global unique variable. This exists more often (due to multiple references to htis namespace?). Consider rewriting to classes + singletons
-
-    // Load Wifi settings, create a configuration object and initalize state variables
+// Load Wifi settings, create a configuration object and initalize state variables
 void OCFMQTT::init() {
     StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
     bool file_read = OCFFilesystem::readJsonFile(MQTT_CONFIG_FILE, doc);

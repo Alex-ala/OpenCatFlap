@@ -6,8 +6,8 @@
 #include <OCFMQTT.h>
 
 void setup() {
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
+  Serial.begin(9600);
+  //Serial.setDebugOutput(true);
   OCFFilesystem::initSPIFFS();
   // start flap task
   OCFFlapControl::init();

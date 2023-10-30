@@ -211,6 +211,9 @@ void OCFFlapControl::loop(void* parameter){
     unsigned long current_millis = 0;
     bool previously_active = false;
     unsigned long millis_status_update = 0;
+    bool reading_rfid = false;
+    char input[1];
+    char tag[29];
     while(true){
         // Run max every ms
         current_millis = millis();
@@ -225,12 +228,44 @@ void OCFFlapControl::loop(void* parameter){
         // Handle no activity
         flap.closeAutomatically(d);
         if (flap.flapState.active != previously_active && ! flap.flapState.active){
-            log_d("A cat went %s", DirectionString(flap.flapState.flap_opened));
+            OCFMQTT::sendMessage("log", DirectionString(flap.flapState.flap_opened));
             flap.flapState.flap_opened = OCFDirection::NONE;
+            reading_rfid = false;
+            input[0] = 0x0;
+            for (int x = 0; x < 29; x++) tag[x] = 0x0;
         }
         if(d != OCFDirection::NONE){
             // Handle activity
             flap.flapState.active = true;
+            if (Serial.available() >= 1 && !reading_rfid){
+                Serial.read(input, 1);
+                if (input[0] == 0x02){
+                    reading_rfid = true;
+                }else{
+                    Serial.read();
+                    input[0] = 0x0;
+                    for (int x = 0; x < 29; x++) tag[x] = 0x0;
+                }
+            } else if (reading_rfid && Serial.available() >= 29){
+                Serial.readBytesUntil(0x03,tag,29);
+                OCFMQTT::sendMessage("rfid", tag);
+                char tag_country_bytes[5]; 
+                char tag_id_bytes[11];
+                for (int i = 3; i>=0; i--){
+                    tag_country_bytes[3-i] = tag[10+i];
+                }
+                tag_country_bytes[4] = 0x0;
+                for (int i = 9; i>=0; i--){
+                    tag_id_bytes[9-i] = tag[i];
+                }
+                tag_id_bytes[10] = 0x0;
+                long long tag_id = strtoll(tag_id_bytes, NULL, 16);
+                long tag_country = strtol(tag_country_bytes, NULL, 16);
+                OCFMQTT::sendMessage("rfid", (String(tag_country) + (tag_id)).c_str());
+                Serial.read();
+                input[0] = 0x0;
+                for (int x = 0; x < 29; x++) tag[x] = 0x0;
+            }
             if (d == OCFDirection::IN){
                 if (flap.flapState.allow_in) {
                     flap.flapState.last_change_in = OCFWifi::getEpochTime();
