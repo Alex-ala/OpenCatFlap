@@ -92,6 +92,7 @@ bool OCFMQTT::connectMQTT(){
     }
     if (connected){
         log_d("Connected to MQTT at %s:%d", config.server, config.port);
+        sendMessage("startup", "Connected to MQTT");
     }else{
         log_d("Failed to connect to MQTT at %s:%d", config.server, config.port);
         mqttclient.disconnect();

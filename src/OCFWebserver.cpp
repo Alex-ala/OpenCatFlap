@@ -14,7 +14,6 @@ void OCFWebserver::init(){
     server.on("/api",HTTPMethod::HTTP_GET, handle_api_get);
     server.on("/api",HTTPMethod::HTTP_POST, handle_api_post);
     server.on("/api/certs",HTTPMethod::HTTP_POST, handle_certs);
-    server.serveStatic("/static", SPIFFS,"/");
     server.begin();
     log_d("Webserver initialized");
     initialized = true;
