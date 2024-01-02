@@ -2,7 +2,7 @@
 #define __OCFFLAPCONTROL_H__
 
 #include <Arduino.h>
-#include <Servo.h>
+#include <ESP32Servo.h>
 #include <definitions.h>
 #include <ArduinoJson.h>
 #include <OCFFilesystem.h>
