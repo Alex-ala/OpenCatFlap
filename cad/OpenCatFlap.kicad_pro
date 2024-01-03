@@ -431,7 +431,10 @@
     "meta": {
       "version": 3
     },
-    "net_colors": null,
+    "net_colors": {
+      "Net-(P2-E-)": "rgb(255, 229, 14)",
+      "Net-(P3-E-)": "rgb(255, 0, 203)"
+    },
     "netclass_assignments": null,
     "netclass_patterns": []
   },
