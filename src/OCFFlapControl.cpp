@@ -25,6 +25,9 @@ int OCFFlapControl::count_motion_outside = 0;
 
 void OCFFlapControl::init(){
     log_d("Initializing Flapcontrol");
+    pinMode(D2, OUTPUT);
+    pinMode(A7, OUTPUT);
+    Serial1.begin(9600,SERIAL_8N2,D9,D10);
     loadState();
     enableServos();
     pinMode(OCF_MOTION_INSIDE_PIN, INPUT);
@@ -151,9 +154,15 @@ OCFDirection OCFFlapControl::detectMotion(){
     if (motion_inside > OCF_MOTION_THRESHOLD) count_motion_inside++;
     if (motion_outside > OCF_MOTION_THRESHOLD) count_motion_outside++;
 
-    if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) return OCFDirection::BOTH;
-    if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) return OCFDirection::OUT;
-    if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) return OCFDirection::IN;
+    if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) {
+        return OCFDirection::BOTH;
+    }
+    if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) {
+        return OCFDirection::OUT;
+    }
+    if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) {
+        return OCFDirection::IN;
+    }
     return OCFDirection::NONE;
 }
 
@@ -195,15 +204,16 @@ void OCFFlapControl::getFlapStateJson(String& outStr){
     doc["last_activity"] = flapState.last_activity;
     doc["last_change_in"] = flapState.last_change_in;
     doc["last_change_out"] = flapState.last_change_out;
-    doc["memory_usage"] = esp_get_free_heap_size();
+    // doc["memory_usage"] = esp_get_free_heap_size();
+    doc["time"] = OCFWifi::getEpochTime();
     serializeJsonPretty(doc, outStr);
 }
 
 void OCFFlapControl::detectMovementOCFDirection(){
     int flap_sensor_in = analogRead(OCF_FLAPIR_INSIDE_PIN);
     int flap_sensor_out = analogRead(OCF_FLAPIR_OUTSIDE_PIN);
-    if (flap_sensor_in > 2000) flapState.flap_opened = OCFDirection::IN;
-    if (flap_sensor_out > 2000) flapState.flap_opened = OCFDirection::OUT;
+    if (flap_sensor_in > OCF_FLAPIR_THRESHOLD) flapState.flap_opened = OCFDirection::IN;
+    if (flap_sensor_out > OCF_FLAPIR_THRESHOLD) flapState.flap_opened = OCFDirection::OUT;
 }
 
 void OCFFlapControl::loop(void* parameter){
@@ -223,32 +233,38 @@ void OCFFlapControl::loop(void* parameter){
         }
         previous_millis = current_millis;
         // Detect activity
-        OCFDirection d = flap.detectMotion();
-        previously_active = flap.flapState.active;
+        OCFDirection motion_direction = flap.detectMotion();
+        if (motion_direction != OCFDirection::NONE) previously_active = flap.flapState.active;
         // Handle no activity
-        flap.closeAutomatically(d);
-        if (flap.flapState.active != previously_active && ! flap.flapState.active){
+        flap.closeAutomatically(motion_direction);
+        if (previously_active && ! flap.flapState.active){
+            previously_active = false;
             OCFMQTT::sendMessage("log", DirectionString(flap.flapState.flap_opened));
             flap.flapState.flap_opened = OCFDirection::NONE;
             reading_rfid = false;
             input[0] = 0x0;
             for (int x = 0; x < 29; x++) tag[x] = 0x0;
+            Serial1.read();
         }
-        if(d != OCFDirection::NONE){
+        if(motion_direction == OCFDirection::NONE) Serial1.read();
+        if(motion_direction != OCFDirection::NONE){
             // Handle activity
             flap.flapState.active = true;
-            if (Serial.available() >= 1 && !reading_rfid){
-                Serial.read(input, 1);
-                if (input[0] == 0x02){
-                    reading_rfid = true;
-                }else{
-                    Serial.read();
-                    input[0] = 0x0;
-                    for (int x = 0; x < 29; x++) tag[x] = 0x0;
+            // Read RFID
+            if (!reading_rfid){
+                input[0] = 0x0;
+                for (int x = 0; x < 29; x++) tag[x] = 0x0;
+            }
+            if (Serial1.available() >= 1 && !reading_rfid){
+                while(Serial1.available()){
+                    Serial1.read(input, 1);
+                    if (input[0] == 0x02){
+                        reading_rfid = true;
+                        break;
+                    }
                 }
-            } else if (reading_rfid && Serial.available() >= 29){
-                Serial.readBytesUntil(0x03,tag,29);
-                OCFMQTT::sendMessage("rfid", tag);
+            } else if (reading_rfid && Serial1.available() >= 29){
+                Serial1.readBytesUntil(0x03,tag,29);
                 char tag_country_bytes[5]; 
                 char tag_id_bytes[11];
                 for (int i = 3; i>=0; i--){
@@ -262,26 +278,28 @@ void OCFFlapControl::loop(void* parameter){
                 long long tag_id = strtoll(tag_id_bytes, NULL, 16);
                 long tag_country = strtol(tag_country_bytes, NULL, 16);
                 OCFMQTT::sendMessage("rfid", (String(tag_country) + (tag_id)).c_str());
-                Serial.read();
+                Serial1.read();
                 input[0] = 0x0;
                 for (int x = 0; x < 29; x++) tag[x] = 0x0;
+                reading_rfid = false;
             }
-            if (d == OCFDirection::IN){
+            // Open flap
+            if (motion_direction == OCFDirection::IN){
                 if (flap.flapState.allow_in) {
                     flap.flapState.last_change_in = OCFWifi::getEpochTime();
-                    if(flap.flapState.state_lock_in == OCFState::LOCKED) flap.setLockState(d, OCFState::UNLOCKED);
+                    if(flap.flapState.state_lock_in == OCFState::LOCKED) flap.setLockState(motion_direction, OCFState::UNLOCKED);
                 }
             }
-            if (d == OCFDirection::OUT){
+            if (motion_direction == OCFDirection::OUT){
                 if (flap.flapState.allow_out) {
                     flap.flapState.last_change_out = OCFWifi::getEpochTime();
-                    if (flap.flapState.state_lock_out == OCFState::LOCKED) flap.setLockState(d, OCFState::UNLOCKED);
+                    if (flap.flapState.state_lock_out == OCFState::LOCKED) flap.setLockState(motion_direction, OCFState::UNLOCKED);
                 }
             }
             if (flap.flapState.active) flap.detectMovementOCFDirection();
         }
         // Update Status to MQTT
-        if (millis_status_update + 60000 < current_millis){
+        if (millis_status_update + 6000 < current_millis){
             String str;
             flap.getFlapStateJson(str);
             OCFMQTT::sendMessage("status", str.c_str());
