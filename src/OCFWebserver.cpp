@@ -45,11 +45,15 @@ void OCFWebserver::handle_certs(){
 
 void OCFWebserver::handle_debug(){
     log_d("Received request on /debug");
-    if(OCFFlapControl::flapState.allow_in){
-        OCFFlapControl::flapState.allow_in = false;
-    }else{
-        OCFFlapControl::flapState.allow_in = true;
-    }
+    int pir_in = digitalRead(OCF_MOTION_INSIDE_PIN);
+    int pir_out = digitalRead(OCF_MOTION_OUTSIDE_PIN);
+    int flap_in = digitalRead(OCF_FLAPIR_INSIDE_PIN);
+    int flap_out = digitalRead(OCF_FLAPIR_OUTSIDE_PIN);
+    int tunnel_in = digitalRead(OCF_TUNNELIR_INSIDE_PIN);
+    char buffer[100];
+    sprintf(buffer, "pir_in: %d, pir_out: %d, flap_in: %d, flap_out: %d, tunnel_in: %d", pir_in, pir_out, flap_in, flap_out, tunnel_in);
+    log_d("pir_in: %d, pir_out: %d, flap_in: %d, flap_out: %d, tunnel_in: %d", pir_in, pir_out, flap_in, flap_out, tunnel_in);
+    OCFMQTT::sendMessage("log", buffer);
     server.send(200, "text/html", "debug");
 }
 void OCFWebserver::handle_api_get(){

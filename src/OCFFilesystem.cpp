@@ -1,10 +1,14 @@
 #include <OCFFilesystem.h>
 
+bool mounted = false;
+
 void OCFFilesystem::initSPIFFS(){
-    if (!SPIFFS.begin(true)) {
+    if (!SPIFFS.begin(false)) {
         log_d("An error has occured while mounting SPIFFS");
-    }
+    }else{
+    mounted = true;
     log_d("SPIFFS mounted successfully");
+    }
 }
 bool OCFFilesystem::readJsonFile(const char* path, StaticJsonDocument<OCF_MAX_JSON_SIZE>& outRef){
     log_d("Reading %s...", path);
@@ -25,6 +29,7 @@ bool OCFFilesystem::readJsonFile(const char* path, StaticJsonDocument<OCF_MAX_JS
 }
 
 bool OCFFilesystem::writeJsonFile(const char * path, DynamicJsonDocument document){
+    if (!mounted) initSPIFFS();
     log_d("About to write to %s", path);
     fs::FS &fs = SPIFFS;
     File file = fs.open(path, FILE_WRITE);
@@ -65,6 +70,7 @@ int OCFFilesystem::readStringFile(const char * path, char* output, size_t max_si
 }
 
 bool OCFFilesystem::writeStringFile(const char * path, const char* data){
+    if (!mounted) initSPIFFS();
     log_d("About to write to %s", path);
     fs::FS &fs = SPIFFS;
     File file = fs.open(path, FILE_WRITE);

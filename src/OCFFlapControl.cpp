@@ -25,14 +25,17 @@ int OCFFlapControl::count_motion_outside = 0;
 
 void OCFFlapControl::init(){
     log_d("Initializing Flapcontrol");
-    pinMode(D2, OUTPUT);
-    pinMode(A7, OUTPUT);
-    Serial1.begin(9600,SERIAL_8N2,D9,D10);
+    pinMode(OCF_SERVO_IN_PIN, OUTPUT);
+    pinMode(OCF_SERVO_OUT_PIN, OUTPUT);
+    pinMode(OCF_MOTION_INSIDE_PIN, INPUT_PULLUP);
+    pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT_PULLUP);
+    pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
+    pinMode(OCF_FLAPIR_INSIDE_PIN, INPUT);
+    pinMode(OCF_TUNNELIR_INSIDE_PIN, INPUT);
+    pinMode(OCF_TUNNELIR_OUTSIDE_PIN, INPUT);
+    Serial1.begin(9600,SERIAL_8N2,OCF_RFID_INSIDE_RX,D12);
     loadState();
     enableServos();
-    pinMode(OCF_MOTION_INSIDE_PIN, INPUT);
-    pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT);
-    pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
     setLockState(OCFDirection::BOTH, OCFState::LOCKED);
     count_motion_inside = 0;
     count_motion_outside = 0;
@@ -144,23 +147,23 @@ void OCFFlapControl::loadState(){
 }
 
 OCFDirection OCFFlapControl::detectMotion(){
-    int motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN);
-    int motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN);
-    if (motion_inside > OCF_MOTION_THRESHOLD || motion_outside > OCF_MOTION_THRESHOLD){
+    bool motion_inside = digitalRead(OCF_MOTION_INSIDE_PIN) == LOW;
+    bool motion_outside = digitalRead(OCF_MOTION_OUTSIDE_PIN) == LOW;
+    if (motion_inside || motion_outside){
         flapState.last_activity = OCFWifi::getEpochTime();
     }
     if (count_motion_inside > INT_MAX - OCF_MOTION_DELAY) count_motion_inside = OCF_MOTION_DELAY;
     if (count_motion_outside > INT_MAX - OCF_MOTION_DELAY) count_motion_outside = OCF_MOTION_DELAY;
-    if (motion_inside > OCF_MOTION_THRESHOLD) count_motion_inside++;
-    if (motion_outside > OCF_MOTION_THRESHOLD) count_motion_outside++;
+    if (motion_inside) count_motion_inside++;
+    if (motion_outside) count_motion_outside++;
 
-    if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside > OCF_MOTION_THRESHOLD && count_motion_outside > OCF_MOTION_DELAY && motion_outside == OCF_MOTION_THRESHOLD) {
+    if (count_motion_inside > OCF_MOTION_DELAY  && motion_inside && count_motion_outside > OCF_MOTION_DELAY && motion_outside) {
         return OCFDirection::BOTH;
     }
-    if (count_motion_inside > OCF_MOTION_DELAY && motion_inside > OCF_MOTION_THRESHOLD) {
+    if (count_motion_inside > OCF_MOTION_DELAY && motion_inside) {
         return OCFDirection::OUT;
     }
-    if (count_motion_outside > OCF_MOTION_DELAY && motion_outside > OCF_MOTION_THRESHOLD) {
+    if (count_motion_outside > OCF_MOTION_DELAY && motion_outside) {
         return OCFDirection::IN;
     }
     return OCFDirection::NONE;
@@ -308,86 +311,3 @@ void OCFFlapControl::loop(void* parameter){
         vTaskDelay(1);
     }
 }
-
-/*
-loop()
-    case state1: state1();
-    case state1: state2();
-
-statelessActions();
-state1():
-    while(true):
-        do stuff
-        check transition condition
-            transition to state x
-            break
-        statelessActions()
-        vtaskdelay(1)
-state2():
-    while(true):
-        do stuff
-        check transition condition
-            transition to state x
-            break
-        statelessActions()
-        vtaskdelay(1)
-*/
-
-
-/*
-
-There are two coexisting machines:
-    1. Sensor statemachine
-    2. Flap machine (layered)
-Global variables:
-    Active_tags with directions/locations and time (maybe add a bool or len) 
-
-Sensor-Machine:
-    Idle:
-        Check PIRs for movement
-        If movement is detected, transition to ReadTag
-    ReadTag:
-        Init:
-            Ensure RFID Sensors are powered on
-            Store current time
-        Deinit:
-            Power off RFID sensors
-            Clear active_tags
-        Loop:
-            Check if a tag was read
-                If tag was read add or update active_tags
-                Remove tags from active_tags that weren't seen for more than 5s
-            Check for any movement
-                If no movement detected for more than 10s, deinit and transition to Idle
-                If movement detected, store current time
-    
-Flap-Machine:
-    Variables: 
-        Lock-Status with timer per direction
-        enable_unlock
-        flap_is_open (direction)
-        time_since_flap_open
-    Idle layer: Do nothing (vtaskdelay)
-    Proximity layer (if active_tags is not empty):
-        Check permissions on tags and flap
-        Enable unlock-layer
-    Unlock-Layer (if enabled by proximity layer):
-        Check permissions on tags and flap
-        Check Servos and enable them
-        Unlock accordingly
-            store state and time in lock-status
-        Check lock-status 
-            Lock if unlocked for >5s
-            if both directions locked: disable servos and unlock layer
-    Possible-Movement-Layer (enabled if lock-status has an unlocked state):
-        Check flap rotation
-            set direction flap_is_open
-            store current time in time_since_flap_open
-        If flap is closed for more than 2s:
-            flap_is_open = None        
-    Movement-Layer (if flap_is_open):
-        Depending on rotation and active_tag location+unlock state determine tag movement
-        Consult active_tag and (future IR, outside rfid) to see if multiple tags moved.
-
-
-*/
