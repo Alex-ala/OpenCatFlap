@@ -31,20 +31,15 @@ Pretty much decided on the Hardware for now. It will base on an ESP32 with vario
 The 3D model is ready to be tested and a printed version is already in use to debug the code.
 
 Used vital parts:
-    2x PIR (motion detection): Panasonic AMN31112
+    2x PIR (motion detection): Panasonic AMN33111
     2x light barrier for flap detection: TCST 1103
-    2x RFID reader: TBD
+    2x light barrier for tunnel activity: TCRT5000L
+    2x RFID reader: WL-134
     2x Servo: DSM44
-
-
-![Bad schematics](opencatflap.drawio.svg)
 
 **Software:**
 
 Just started working on this...
-
-Just started working on this... As RFID is still missing, no cat detection is yet ready. It works as a dumb cat flap though.
-
 
 How to configure (for now):
 Wifi: `curl -H "Content-Type: application/json" http://192.168.4.1/api -d '{"command": "wifiConfig", "ssid": "Bockenburg", "passphrase": ""}'`
@@ -60,6 +55,3 @@ curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=ca' --data-b
 ![pic2](img/IMG_2905.jpg)
 ![cat approved](img/IMG_2830.JPG)
 
-Resources:
-https://app.ultralibrarian.com/details/Panasonic/AMN31112?uid=6030155
-https://github.com/davidkleymann/doit-esp32-devkit-kicad
