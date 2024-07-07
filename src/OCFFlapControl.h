@@ -50,5 +50,6 @@ class OCFFlapControl {
         static void loop(void* parameters);
         static void getFlapStateJson(String& strOut);
         static void detectMovementOCFDirection();
+        static void OCFFlapControl::setActiveState(bool active);
 };
 #endif // __OCFFLAPCONTROL_H__

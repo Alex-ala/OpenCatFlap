@@ -29,11 +29,14 @@ void OCFFlapControl::init(){
     pinMode(OCF_SERVO_OUT_PIN, OUTPUT);
     pinMode(OCF_MOTION_INSIDE_PIN, INPUT_PULLUP);
     pinMode(OCF_MOTION_OUTSIDE_PIN, INPUT_PULLUP);
-    pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT);
-    pinMode(OCF_FLAPIR_INSIDE_PIN, INPUT);
-    pinMode(OCF_TUNNELIR_INSIDE_PIN, INPUT);
-    pinMode(OCF_TUNNELIR_OUTSIDE_PIN, INPUT);
-    Serial1.begin(9600,SERIAL_8N2,OCF_RFID_INSIDE_RX,D12);
+    pinMode(OCF_FLAPIR_OUTSIDE_PIN, INPUT_PULLDOWN);
+    pinMode(OCF_FLAPIR_INSIDE_PIN, INPUT_PULLDOWN);
+    pinMode(OCF_TUNNELIR_INSIDE_PIN, INPUT_PULLDOWN);
+    pinMode(OCF_TUNNELIR_OUTSIDE_PIN, INPUT_PULLDOWN);
+    pinMode(OCF_RFID_INSIDE_EN, OUTPUT);
+    pinMode(OCF_RFID_OUTSIDE_EN, OUTPUT);
+    Serial1.begin(9600,SERIAL_8N2,OCF_RFID_OUTSIDE_RX,D12);
+    Serial2.begin(9600,SERIAL_8N2,OCF_RFID_INSIDE_RX,D11);
     loadState();
     enableServos();
     setLockState(OCFDirection::BOTH, OCFState::LOCKED);
@@ -50,6 +53,7 @@ void OCFFlapControl::enableServos(){
 
 void OCFFlapControl::disableServos(){
     log_d("Disabling servos due to inactivity");
+    setLockState(OCFDirection::BOTH, OCFState::LOCKED);
     servo_in.detach();
     servo_out.detach();
     flapState.servosAttached = false;
@@ -87,11 +91,11 @@ void OCFFlapControl::setLockState(OCFDirection direction, OCFState state){
         flapState.state_lock_out = state;
         flapState.state_lock_in = state;
         if(state == OCFState::UNLOCKED){
-            moveServo(direction, OCF_SERVO_OUT_UNLOCKED);
-            moveServo(direction, OCF_SERVO_IN_UNLOCKED);
+            moveServo(OCFDirection::OUT, OCF_SERVO_OUT_UNLOCKED);
+            moveServo(OCFDirection::IN, OCF_SERVO_IN_UNLOCKED);
         }else{
-            moveServo(direction, OCF_SERVO_OUT_LOCKED);
-            moveServo(direction, OCF_SERVO_IN_LOCKED);
+            moveServo(OCFDirection::OUT, OCF_SERVO_OUT_LOCKED);
+            moveServo(OCFDirection::IN, OCF_SERVO_IN_LOCKED);
         } 
     }
     if (OCFMQTT::config.logActivity){
@@ -186,7 +190,7 @@ void OCFFlapControl::closeAutomatically(OCFDirection d){
     if(diff > OCF_CLOSE_AFTER_S) {
         count_motion_inside = 0;
         count_motion_outside = 0;
-        flapState.active = false;
+        setActiveState(false);
     }
     if(diff > OCF_DISABLE_SERVOS_AFTER_S && flapState.servosAttached){
         setLockState(OCFDirection::IN, OCFState::LOCKED);
@@ -213,10 +217,22 @@ void OCFFlapControl::getFlapStateJson(String& outStr){
 }
 
 void OCFFlapControl::detectMovementOCFDirection(){
-    int flap_sensor_in = analogRead(OCF_FLAPIR_INSIDE_PIN);
-    int flap_sensor_out = analogRead(OCF_FLAPIR_OUTSIDE_PIN);
-    if (flap_sensor_in > OCF_FLAPIR_THRESHOLD) flapState.flap_opened = OCFDirection::IN;
-    if (flap_sensor_out > OCF_FLAPIR_THRESHOLD) flapState.flap_opened = OCFDirection::OUT;
+    bool flap_sensor_in = digitalRead(OCF_FLAPIR_INSIDE_PIN) == HIGH;
+    bool flap_sensor_out = digitalRead(OCF_FLAPIR_OUTSIDE_PIN) == HIGH;
+    if (flap_sensor_in) flapState.flap_opened = OCFDirection::IN;
+    if (flap_sensor_out) flapState.flap_opened = OCFDirection::OUT;
+}
+
+void OCFFlapControl::setActiveState(bool active){
+    if (active){
+        flap.flapState.active = true;
+        digitalWrite(OCF_RFID_INSIDE_EN, HIGH);
+        digitalWrite(OCF_RFID_OUTSIDE_EN, HIGH);
+    }else{
+        flap.flapState.active = false;
+        digitalWrite(OCF_RFID_INSIDE_EN, LOW);
+        digitalWrite(OCF_RFID_OUTSIDE_EN, LOW);
+    }
 }
 
 void OCFFlapControl::loop(void* parameter){
@@ -248,25 +264,29 @@ void OCFFlapControl::loop(void* parameter){
             input[0] = 0x0;
             for (int x = 0; x < 29; x++) tag[x] = 0x0;
             Serial1.read();
+            Serial2.read();
         }
         if(motion_direction == OCFDirection::NONE) Serial1.read();
+        if(motion_direction == OCFDirection::NONE) Serial2.read();
+        // Handle activity
         if(motion_direction != OCFDirection::NONE){
-            // Handle activity
-            flap.flapState.active = true;
-            // Read RFID
+            setActiveState(true);
             if (!reading_rfid){
                 input[0] = 0x0;
                 for (int x = 0; x < 29; x++) tag[x] = 0x0;
             }
             if (Serial1.available() >= 1 && !reading_rfid){
+                log_d("Receiving RFID...");
                 while(Serial1.available()){
                     Serial1.read(input, 1);
                     if (input[0] == 0x02){
                         reading_rfid = true;
+                        log_d("Received initial byte for tag...");
                         break;
                     }
                 }
             } else if (reading_rfid && Serial1.available() >= 29){
+                log_d("Received full set of bytes for a tag...");
                 Serial1.readBytesUntil(0x03,tag,29);
                 char tag_country_bytes[5]; 
                 char tag_id_bytes[11];

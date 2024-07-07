@@ -16,7 +16,7 @@ struct MQTTConfiguration {
     const char* key = "";
     const char* name = "doorofdurin";
     bool ssl = false;
-    bool logActivity = false;
+    bool logActivity = true;
 };
 
 class OCFMQTT{
