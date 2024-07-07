@@ -31,11 +31,11 @@ Pretty much decided on the Hardware for now. It will base on an ESP32 with vario
 The 3D model is ready to be tested and a printed version is already in use to debug the code.
 
 Used vital parts:
-    2x PIR (motion detection): Panasonic AMN33111
-    2x light barrier for flap detection: TCST 1103
-    2x light barrier for tunnel activity: TCRT5000L
-    2x RFID reader: WL-134
-    2x Servo: DSM44
+- 2x PIR (motion detection): Panasonic AMN33111
+- 2x light barrier for flap detection: TCST 1103
+- 2x light barrier for tunnel activity: TCRT5000L
+- 2x RFID reader: WL-134
+- 2x Servo: DSM44
 
 **Software:**
 
