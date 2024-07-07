@@ -1,4 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "OpenCatFlap")(type "KiCad")(uri "${KIPRJMOD}/OpenCatFlap.kicad_sym")(options "")(descr ""))
-)
