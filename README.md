@@ -26,7 +26,7 @@ Current state:
 ------
 **Hardware:**
 
-Pretty much decided on the Hardware for now. It will base on an ESP32 with various sensors and two servos to lock/unlock.
+Pretty much decided on the Hardware for now. It will base on an ESP32 (Arduino Nano ESP32 for development) with various sensors and two servos to lock/unlock.
 
 The 3D model is ready to be tested and a printed version is already in use to debug the code.
 
