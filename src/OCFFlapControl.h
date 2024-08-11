@@ -10,6 +10,15 @@
 #include <OCFWifi.h>
 #include <OCFMQTT.h>
 
+/*  NEW IDEAS
+std::queue<const char*> activityLog;
+public void reportActiviy(const char* activity)
+    Called by state machines
+    Updates log queue and writes mqtt
+
+
+
+*/ 
 enum OCFDirection { IN, OUT, NONE, BOTH };
 enum OCFState { LOCKED, UNLOCKED };
 struct FlapState {
