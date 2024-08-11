@@ -2,6 +2,8 @@
 #define __OCFLock_H__
 
 #include <OCFHelper.h>
+#include <Servo.h>
+#include <definitions.h>
 
 
 class OCFLock {
@@ -11,7 +13,11 @@ class OCFLock {
         static bool armedIn;
         static bool armedOut;
 
-        static void moveServo(int pin, int angle);
+        static Servo servoIn;
+        static Servo servoOut;
+
+        static void moveServoIn(int angle);
+        static void moveServoOut(int angle);
 
     public:
         static const char* toString;
@@ -23,9 +29,8 @@ class OCFLock {
         static bool isLockedIn();
         static bool isArmedIn();
         static bool isArmedOut();
-    
-
-}
+        static void init();
+};
 
 
 #endif

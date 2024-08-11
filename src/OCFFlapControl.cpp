@@ -305,6 +305,7 @@ void OCFFlapControl::loop(void* parameter){
                 input[0] = 0x0;
                 for (int x = 0; x < 29; x++) tag[x] = 0x0;
                 reading_rfid = false;
+                // TODO: HIGH on RFID Reset
             }
             // Open flap
             if (motion_direction == OCFDirection::IN){

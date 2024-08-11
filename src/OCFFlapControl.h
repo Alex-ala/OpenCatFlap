@@ -16,6 +16,8 @@ public void reportActiviy(const char* activity)
     Called by state machines
     Updates log queue and writes mqtt
 
+Replace FlapState with OCFConfig:  
+    allowIn, allowOut, cats
 
 
 */ 
