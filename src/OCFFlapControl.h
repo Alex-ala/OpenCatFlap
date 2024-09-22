@@ -2,13 +2,8 @@
 #define __OCFFLAPCONTROL_H__
 
 #include <Arduino.h>
-//#include <ESP32Servo.h>
-#include <Servo.h>
-#include <definitions.h>
-#include <ArduinoJson.h>
-#include <OCFFilesystem.h>
-#include <OCFWifi.h>
-#include <OCFMQTT.h>
+#include <OCFStateMachine.h>
+#include <OCFConfig.h>
 
 /*  NEW IDEAS
 std::queue<const char*> activityLog;
@@ -21,46 +16,15 @@ Replace FlapState with OCFConfig:
 
 
 */ 
-enum OCFDirection { IN, OUT, NONE, BOTH };
-enum OCFState { LOCKED, UNLOCKED };
-struct FlapState {
-    OCFState state_lock_in;
-    OCFState state_lock_out;
-    bool allow_out;
-    bool allow_in;
-    bool active;
-    int active_cat;
-    OCFDirection flap_opened;
-    uint64_t last_activity;
-    uint64_t last_change_in;
-    uint64_t last_change_out;
-    bool servosAttached;
-};
-const char* DirectionString(OCFDirection dir);
-const char* StateString(OCFState state);
+
 class OCFFlapControl {
     private:
-        static OCFFlapControl flap;
-        static Servo servo_in;
-        static Servo servo_out;
-        static int count_motion_inside;
-        static int count_motion_outside;
+        static OCFStateMachine* stateMachineInside;
+        static OCFStateMachine* stateMachineOutside;
     public:
-        static FlapState flapState;
+        static OCFConfig config;
         static void init();
         static void deinit();
-        static void enableServos();
-        static void disableServos();
-        static void moveServo(OCFDirection direction, int angle);
-        static void setLockState(OCFDirection direction, OCFState state);
-        static void setAllowState(OCFDirection direction, bool allowed);
-        static void persistState();
-        static void loadState();
-        static OCFDirection detectMotion();
-        static void closeAutomatically(OCFDirection d);
         static void loop(void* parameters);
-        static void getFlapStateJson(String& strOut);
-        static void detectMovementOCFDirection();
-        static void OCFFlapControl::setActiveState(bool active);
 };
 #endif // __OCFFLAPCONTROL_H__

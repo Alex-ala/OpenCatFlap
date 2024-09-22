@@ -21,18 +21,15 @@
 #define OCF_TUNNELIR_OUTSIDE_PIN A7
 
 #define OCF_RFID_OUTSIDE_RX D2
+#define OCF_RFID_OUTSIDE_TX D12
 #define OCF_RFID_OUTSIDE_RST D3
 #define OCF_RFID_OUTSIDE_EN A2
 #define OCF_RFID_INSIDE_RX D7
+#define OCF_RFID_INSIDE_TX D11
 #define OCF_RFID_INSIDE_RST D8
 #define OCF_RFID_INSIDE_EN D6
 
-#define OCF_CLOSE_AFTER_S 2
-#define OCF_DISABLE_SERVOS_AFTER_S 30
-
 #define OCF_DEBUG_PIN D20
-
-#define OCF_PATHS_FLAP_STATE "/flapState.json"
 
 #define OCF_DEFAULT_NTP_SERVER "pool.ntp.org"
 
@@ -43,3 +40,4 @@
 #define WIFI_CONFIG_FILE "/wifi_configuration.json"
 #define MQTT_CONFIG_FILE "/mqtt_configuration.json"
 #define CAT_CONFIG_FILE "/cat_configuration.json"
+#define FLAP_CONFIG_FILE "flap_configuration.json"

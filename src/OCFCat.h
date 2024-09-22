@@ -1,7 +1,7 @@
 #ifndef __OCFCAT_H__
 #define __OCFCAT_H__
 
-#include <OCFFlapControl.h>
+#include <OCFHelper.h>
 
 struct OCFCat{
     OCFDirection location {OCFDirection::NONE};

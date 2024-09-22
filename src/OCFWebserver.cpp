@@ -107,10 +107,10 @@ void OCFWebserver::handle_api_post(){
             return;
         }
         OCFDirection direction = parseDirection(doc["direction"].as<String>());
-        OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
+        //OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
     }else if (doc["command"] == "status"){
         String str;
-        OCFFlapControl::getFlapStateJson(str);
+        //OCFFlapControl::getFlapStateJson(str);
         server.send(200, "application/json", str);
         return;
     }
