@@ -35,35 +35,44 @@ Unlocked:
     Transitioning to Reading includes locking the flap
 */
 
-enum OCFMachineStates { IDLE, READING, UNLOCKED };
-class OCFStateMachine {
-    private:
-        OCFMachineStates currentState;
-        const OCFDirection direction;
-        bool servoAttached;
-        uint64_t lastMotion;
-        uint64_t lastRFID;
-        char rfidTag[29];
-        bool rfidReading;
-        HardwareSerial *serial;
-
-        int pin_motion;
-        int pin_rfid_power;
-        int pin_rfid_read;
-        int pin_rfid_write;
-        int pin_rfid_reset;
-
-        void updateIdle();
-        void updateReading();
-        void updateUnlocked();
-        void transitionIdleToReading();
-        void transitionReadingToIdle();
-        void transitionReadingToUnlocked();
-        void transitionUnlockedToReading();
-    public:
-        void update();
-        OCFStateMachine(OCFDirection direction);
+enum OCFMachineStates
+{
+    IDLE,
+    READING,
+    UNLOCKED
 };
+class OCFStateMachine
+{
+private:
+    OCFMachineStates currentState;
+    const OCFDirection direction;
+    bool servoAttached;
+    uint64_t lastMotion;
+    uint64_t lastRFID;
+    char rfidTag[29];
+    bool rfidReading;
+    HardwareSerial *serial;
 
+    int pin_motion;
+    int pin_rfid_power;
+    int pin_rfid_read;
+    int pin_rfid_write;
+    int pin_rfid_reset;
+
+    void resetRFID();
+    long long readRFID();
+
+    void updateIdle();
+    void updateReading();
+    void updateUnlocked();
+    void transitionIdleToReading();
+    void transitionReadingToIdle();
+    void transitionReadingToUnlocked();
+    void transitionUnlockedToReading();
+
+public:
+    void update();
+    OCFStateMachine(OCFDirection direction);
+};
 
 #endif

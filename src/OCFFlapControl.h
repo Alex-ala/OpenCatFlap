@@ -11,20 +11,22 @@ public void reportActiviy(const char* activity)
     Called by state machines
     Updates log queue and writes mqtt
 
-Replace FlapState with OCFConfig:  
+Replace FlapState with OCFConfig:
     allowIn, allowOut, cats
 
 
-*/ 
+*/
 
-class OCFFlapControl {
-    private:
-        static OCFStateMachine* stateMachineInside;
-        static OCFStateMachine* stateMachineOutside;
-    public:
-        static OCFConfig config;
-        static void init();
-        static void deinit();
-        static void loop(void* parameters);
+class OCFFlapControl
+{
+private:
+    inline static OCFStateMachine *stateMachineInside;
+    inline static OCFStateMachine *stateMachineOutside;
+
+public:
+    inline static OCFConfig config;
+    static void init();
+    static void deinit();
+    static void loop(void *parameters);
 };
 #endif // __OCFFLAPCONTROL_H__
