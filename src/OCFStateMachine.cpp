@@ -51,6 +51,7 @@ void OCFStateMachine::updateReading(){
     // Reset RFID after 5s
     if (lastRFID <= millis() - 2000){
         serial->read();
+        lastRFID = millis();
         digitalWrite(pin_rfid_reset, HIGH);
         digitalWrite(pin_rfid_reset, LOW);
     }
@@ -90,6 +91,10 @@ void OCFStateMachine::updateReading(){
     digitalWrite(pin_rfid_reset, LOW);
 
     transitionReadingToUnlocked();
+}
+
+void OCFStateMachine::updateUnlocked(){
+
 }
 
 void OCFStateMachine::transitionIdleToReading(){
