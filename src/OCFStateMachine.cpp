@@ -1,5 +1,6 @@
 #include <OCFStateMachine.h>
 
+// TODO: Enable WIFI & MQTT to debug with powersupply
 OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
 {
     OCFLock::enableServo(direction);
@@ -12,39 +13,50 @@ OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
 
     if (direction == OCFDirection::IN)
     {
-        // TODO: Revert PIR pin to inside
         pin_motion = OCF_MOTION_OUTSIDE_PIN;
-        pin_rfid_power = OCF_RFID_INSIDE_EN;
-        pin_rfid_read = OCF_RFID_INSIDE_RX;
-        pin_rfid_write = OCF_RFID_INSIDE_TX;
-        pin_rfid_reset = OCF_RFID_INSIDE_RST;
-        serial = &Serial1;
-    }
-    else if (direction == OCFDirection::OUT)
-    {
-        pin_motion = OCF_MOTION_OUTSIDE_PIN;
+        // Current hardware build has outside and inside antennas swapped....
         pin_rfid_power = OCF_RFID_OUTSIDE_EN;
         pin_rfid_read = OCF_RFID_OUTSIDE_RX;
         pin_rfid_write = OCF_RFID_OUTSIDE_TX;
         pin_rfid_reset = OCF_RFID_OUTSIDE_RST;
+        serial = &Serial1;
+        prefix = "In:";
+    }
+    else if (direction == OCFDirection::OUT)
+    {
+        pin_motion = OCF_MOTION_INSIDE_PIN;
+        pin_rfid_power = OCF_RFID_INSIDE_EN;
+        pin_rfid_read = OCF_RFID_INSIDE_RX;
+        pin_rfid_write = OCF_RFID_INSIDE_TX;
+        pin_rfid_reset = OCF_RFID_INSIDE_RST;
         serial = &Serial2;
+        prefix = "Out:";
     }
     pinMode(pin_motion, INPUT_PULLUP);
     digitalWrite(pin_rfid_power, LOW);
+    digitalWrite(pin_rfid_reset, HIGH);
+    pinMode(pin_rfid_power, OUTPUT);
+    pinMode(pin_rfid_reset, OUTPUT);
     serial->begin(9600, SERIAL_8N2, pin_rfid_read, pin_rfid_write);
     currentState = OCFMachineStates::IDLE;
-    log_d("StateMachine initialized");
+    log_d("%s StateMachine initialized", prefix);
+}
+
+void OCFStateMachine::flushRFID(){
+    while(serial->available() > 0){
+        serial->read();
+    }
 }
 
 void OCFStateMachine::resetRFID()
 {
-    log_d("reset RFID");
-    serial->read();
-    lastRFID = millis();
+    log_d("%s reset RFID", prefix);
+    flushRFID();
+    lastRead = millis();
     rfidReading = false;
-    digitalWrite(pin_rfid_reset, HIGH);
-    delay(10);
     digitalWrite(pin_rfid_reset, LOW);
+    delay(10);
+    digitalWrite(pin_rfid_reset, HIGH);
 }
 
 long long OCFStateMachine::readRFID()
@@ -60,37 +72,42 @@ long long OCFStateMachine::readRFID()
             if (input[0] == 0x02)
             {
                 rfidReading = true;
-                log_d("Received RFID header");
+                log_d("%s Received RFID header", prefix);
                 break;
             }
         }
         return 0;
     }
-    log_d("Reading RFID...");
+    log_d("%s Reading RFID...", prefix);
+    //900 215007389064
+    // 38 38 35 36 30 37 46 30 32 33 - 34 38 33 30 - 31 - 31 - 30 30 30 30 - 37 30 32 42 31 30 - 0A F5 03
+    // 38 38 35 36 30 37 46 30 32 33 -> Reverse -> 33 32 30 46 37 30 36 35 38 38 -> ASCII -> 320F706588 -> int -> 215007389064
+    // 34 38 33 30 -> Reverse -> 30 33 38 34 -> ASCII -> 0384 -> int -> 900
     // try to read tag id
     if (serial->available() < 29)
         return 0;
-    serial->readBytesUntil(0x03, rfidTag, 29);
+    serial->readBytes(rfidTag, 29);
     char tag_country_bytes[5];
     char tag_id_bytes[11];
-    for (int i = 3; i >= 0; i--)
-    {
-        tag_country_bytes[3 - i] = rfidTag[10 + i];
-    }
-    tag_country_bytes[4] = 0x0;
     for (int i = 9; i >= 0; i--)
     {
         tag_id_bytes[9 - i] = rfidTag[i];
     }
     tag_id_bytes[10] = 0x0;
-    long long tag_id = strtoll(tag_id_bytes, NULL, 16);
-    long tag_country = strtol(tag_country_bytes, NULL, 16);
+    for (int i = 3; i >= 0; i--)
+    {
+        tag_country_bytes[3 - i] = rfidTag[10 + i];
+    }
+    tag_country_bytes[4] = 0x0;
+    long long tag_id = strtoull(tag_id_bytes, NULL, 16);
+    long tag_country = strtoul(tag_country_bytes, NULL, 16);
     serial->read();
     for (int x = 0; x < 29; x++)
         rfidTag[x] = 0x0;
     rfidReading = false;
     lastRFID = millis();
-    log_d("RFID read: %d", tag_id);
+    lastRead = lastRFID;
+    Serial.println(tag_id); // TODO: log_d and/or sprintf are not threadsafe
     return tag_id;
     //TODO: tag read wrong
 }
@@ -124,7 +141,7 @@ void OCFStateMachine::updateReading()
     if (lastMotion <= millis() - 10000)
         transitionReadingToIdle();
     // Reset RFID after 5s
-    if (lastRFID <= millis() - 2000)
+    if (lastRead <= millis() - 2000)
         resetRFID();
     // Read until init byte is received
     long long id = readRFID();
@@ -135,9 +152,14 @@ void OCFStateMachine::updateReading()
 
 void OCFStateMachine::updateUnlocked()
 {
-    //TODO: reset rfid and lastMotion in here aswell
+    bool motion = digitalRead(pin_motion) == LOW;
+    if (motion) {
+        lastMotion = millis();
+    }
     if (lastRFID <= millis() - 5000)
         transitionUnlockedToReading();
+    if (lastRead <= millis() - 2000)
+        resetRFID();
     long long tag = readRFID();
 }
 
@@ -147,12 +169,12 @@ void OCFStateMachine::transitionIdleToReading()
     servoAttached = true;
     rfidReading = false;
     lastRFID = 0;
-    serial->read();
+    lastRead = 0;
+    flushRFID();
     digitalWrite(pin_rfid_power, HIGH);
-    digitalWrite(pin_rfid_reset, HIGH);
-    digitalWrite(pin_rfid_reset, LOW);
+    resetRFID();
     currentState = OCFMachineStates::READING;
-    log_d("Transition to Reading");
+    log_d("%s Transition to Reading", prefix);
 }
 
 void OCFStateMachine::transitionReadingToIdle()
@@ -162,18 +184,20 @@ void OCFStateMachine::transitionReadingToIdle()
     rfidReading = false;
     lastMotion = 0;
     lastRFID = 0;
+    lastRead = 0;
     digitalWrite(pin_rfid_power, LOW);
-    serial->read();
+    flushRFID();
     currentState = OCFMachineStates::IDLE;
-    log_d("Transition to Idle");
+    log_d("%s Transition to Idle", prefix);
 }
 
 void OCFStateMachine::transitionReadingToUnlocked()
 {
     resetRFID();
     OCFLock::unlock(direction);
+    digitalWrite(pin_rfid_power, HIGH);
     currentState = OCFMachineStates::UNLOCKED;
-    log_d("Transition to Unlocked");
+    log_d("%s Transition to Unlocked", prefix);
 }
 
 void OCFStateMachine::transitionUnlockedToReading()
@@ -181,5 +205,5 @@ void OCFStateMachine::transitionUnlockedToReading()
     resetRFID();
     OCFLock::lock(direction);
     currentState = OCFMachineStates::READING;
-    log_d("Transition to Reading");
+    log_d("%s Transition to Reading", prefix);
 }

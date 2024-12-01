@@ -49,9 +49,11 @@ private:
     bool servoAttached;
     uint64_t lastMotion;
     uint64_t lastRFID;
+    uint64_t lastRead;
     char rfidTag[29];
     bool rfidReading;
     HardwareSerial *serial;
+    String prefix;
 
     int pin_motion;
     int pin_rfid_power;
@@ -59,6 +61,7 @@ private:
     int pin_rfid_write;
     int pin_rfid_reset;
 
+    void flushRFID();
     void resetRFID();
     long long readRFID();
 

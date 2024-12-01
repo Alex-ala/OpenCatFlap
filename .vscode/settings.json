@@ -7,6 +7,7 @@
         "ostream": "cpp",
         "sstream": "cpp",
         "string": "cpp",
-        "new": "cpp"
+        "new": "cpp",
+        "cstdlib": "cpp"
     }
 }
