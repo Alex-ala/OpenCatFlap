@@ -16,6 +16,7 @@ void OCFWebserver::init(){
     server.on("/api",HTTPMethod::HTTP_GET, handle_api_get);
     server.on("/api",HTTPMethod::HTTP_POST, handle_api_post);
     server.on("/api/certs",HTTPMethod::HTTP_POST, handle_certs);
+    server.on("/api/cats", HTTPMethod::HTTP_GET, handle_api_cats);
     server.begin();
     log_d("Webserver initialized");
     initialized = true;
@@ -55,6 +56,12 @@ void OCFWebserver::handle_debug(){
 void OCFWebserver::handle_api_get(){
     log_d("Received GET request on /api");
     server.send(200, "text/html", "api get");
+}
+void OCFWebserver::handle_api_cats(){
+    String str;
+    OCFState::getCatsJSON(str);
+    server.send(200, "application/json", str);
+    return;
 }
 void OCFWebserver::handle_api_post(){
     log_d("Received POST request on /api");
@@ -115,7 +122,7 @@ void OCFWebserver::handle_api_post(){
         //OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
     }else if (doc["command"] == "status"){
         String str;
-        OCFFlapControl::getStateJSON(str);
+        OCFState::getStateJSON(str);
         server.send(200, "application/json", str);
         doc.clear();
         for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
@@ -128,13 +135,20 @@ void OCFWebserver::handle_api_post(){
             for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
             return;
         }
-        OCFCat cat = OCFCat();
+        unsigned long long id = doc["rfid"].as<unsigned long long>();
+        std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
+        OCFCat cat;
+        if (it->first == id) {
+            cat = it->second;
+        }else{
+            cat = OCFCat();
+        }     
         strcpy(cat.name, doc["name"]);
-        cat.rfid = doc["rfid"].as<unsigned long long>();
+        cat.rfid = id;
         if (doc.containsKey("allowed_in")) cat.allow_in = parseAllowState(doc["allowed_in"]);
         if (doc.containsKey("allowed_out")) cat.allow_in = parseAllowState(doc["allowed_out"]);
-        OCFFlapControl::cats.insert_or_assign(cat.rfid, cat);
-        OCFFlapControl::saveCats();
+        OCFState::cats.insert_or_assign(cat.rfid, cat);
+        OCFState::saveCats();
     }
     
     server.send(200, "text/html", "api post");

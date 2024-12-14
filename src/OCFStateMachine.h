@@ -66,6 +66,7 @@ private:
     void flushRFID();
     void resetRFID();
     unsigned long long readRFID();
+    bool checkTag(unsigned long long id);
 
     void updateIdle();
     void updateReading();

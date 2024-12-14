@@ -1,4 +1,5 @@
 #include <OCFStateMachine.h>
+#include <OCFConfig.h>
 
 // TODO: Enable WIFI & MQTT to debug with powersupply
 OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
@@ -147,14 +148,7 @@ void OCFStateMachine::updateReading()
     unsigned long long id = readRFID();
     if (id == 0)
         return;
-    // std::map<unsigned long long, OCFCat>::iterator it = cats->find(id);
-    // if (it->first != id) {
-    //     log_d("Unknown rfid read: %d", id);
-    //     return;
-    // }
-    // OCFCat cat = it->second;
-    // log_d("%s detected.", cat.name);
-    transitionReadingToUnlocked();
+    if (checkTag(id)) transitionReadingToUnlocked();
 }
 
 void OCFStateMachine::updateUnlocked()
@@ -168,6 +162,7 @@ void OCFStateMachine::updateUnlocked()
     if (lastRead <= millis() - 2000)
         resetRFID();
     long long tag = readRFID();
+    if (tag != 0 && !checkTag(tag)) transitionUnlockedToReading();
 }
 
 void OCFStateMachine::transitionIdleToReading()
@@ -217,4 +212,23 @@ void OCFStateMachine::transitionUnlockedToReading()
 
 OCFMachineStates OCFStateMachine::getState(){
     return currentState;
+}
+
+bool OCFStateMachine::checkTag(unsigned long long id){
+    std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
+    if (it->first != id) {
+        Serial.printf("Unknown rfid read: %d\n", id);
+        return false;
+    }
+    OCFCat cat = it->second;
+    cat.last_seen = OCFWifi::getEpochTime();
+    OCFState::cats.insert_or_assign(cat.rfid, cat);
+    log_d("%s detected.", cat.name);
+    log_d("Cat entering has state: %d (cat), %d (global)",cat.allow_in, OCFState::config.allow_in);
+    if (direction == OCFDirection::IN){
+        if (cat.allow_in == TRUE || (cat.allow_in == UNDEF && OCFState::config.allow_in == true)) return true;
+    }else{
+        if (cat.allow_out == TRUE || (cat.allow_out == UNDEF && OCFState::config.allow_out == true)) return true;
+    }
+    return false;
 }

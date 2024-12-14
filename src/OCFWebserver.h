@@ -17,6 +17,7 @@ class OCFWebserver{
         static void handle_api_get();
         static void handle_api_post();
         static void handle_certs();
+        static void handle_api_cats();
         static void loop(void* parameter);
         static void init();
 };

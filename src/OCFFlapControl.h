@@ -26,13 +26,10 @@ private:
     inline static OCFStateMachine *stateMachineOutside;
 
 public:
-    inline static OCFConfig config;
-    inline static std::map<unsigned long long, OCFCat> cats;
     static void init();
     static void deinit();
     static void loop(void *parameters);
-
-    static void getStateJSON(String& outString);
-    static void saveCats();
+    static OCFMachineStates getInsideState();
+    static OCFMachineStates getOutsideState();
 };
 #endif // __OCFFLAPCONTROL_H__
