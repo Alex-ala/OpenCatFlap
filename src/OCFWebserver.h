@@ -6,6 +6,8 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <OCFFlapControl.h>
+#include <OCFHelper.h>
+
 class OCFWebserver{
     private:
         static WebServer server;
@@ -15,7 +17,7 @@ class OCFWebserver{
         static void handle_api_get();
         static void handle_api_post();
         static void handle_certs();
-        static OCFDirection parseDirection(String direction);
+        static void handle_api_cats();
         static void loop(void* parameter);
         static void init();
 };
