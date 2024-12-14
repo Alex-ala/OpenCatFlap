@@ -59,7 +59,7 @@ void OCFStateMachine::resetRFID()
     digitalWrite(pin_rfid_reset, HIGH);
 }
 
-long long OCFStateMachine::readRFID()
+unsigned long long OCFStateMachine::readRFID()
 {
     if (serial->available() == 0) return 0;
     if (serial->available() >= 1 && !rfidReading)
@@ -99,7 +99,7 @@ long long OCFStateMachine::readRFID()
         tag_country_bytes[3 - i] = rfidTag[10 + i];
     }
     tag_country_bytes[4] = 0x0;
-    long long tag_id = strtoull(tag_id_bytes, NULL, 16);
+    unsigned long long tag_id = strtoull(tag_id_bytes, NULL, 16);
     long tag_country = strtoul(tag_country_bytes, NULL, 16);
     serial->read();
     for (int x = 0; x < 29; x++)
@@ -144,9 +144,16 @@ void OCFStateMachine::updateReading()
     if (lastRead <= millis() - 2000)
         resetRFID();
     // Read until init byte is received
-    long long id = readRFID();
+    unsigned long long id = readRFID();
     if (id == 0)
         return;
+    // std::map<unsigned long long, OCFCat>::iterator it = cats->find(id);
+    // if (it->first != id) {
+    //     log_d("Unknown rfid read: %d", id);
+    //     return;
+    // }
+    // OCFCat cat = it->second;
+    // log_d("%s detected.", cat.name);
     transitionReadingToUnlocked();
 }
 
@@ -206,4 +213,8 @@ void OCFStateMachine::transitionUnlockedToReading()
     OCFLock::lock(direction);
     currentState = OCFMachineStates::READING;
     log_d("%s Transition to Reading", prefix);
+}
+
+OCFMachineStates OCFStateMachine::getState(){
+    return currentState;
 }

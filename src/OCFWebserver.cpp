@@ -3,10 +3,12 @@
 #include <OCFWifi.h>
 #include <definitions.h>
 #include <OCFMQTT.h>
+#include <OCFFlapControl.h>
 
 
 bool OCFWebserver::initialized = false;
 WebServer OCFWebserver::server;
+char data_buf[OCF_MAX_JSON_SIZE+1];
 
 void OCFWebserver::init(){
     log_d("Initializing webserver...");
@@ -45,15 +47,9 @@ void OCFWebserver::handle_certs(){
 
 void OCFWebserver::handle_debug(){
     log_d("Received request on /debug");
-    int pir_in = digitalRead(OCF_MOTION_INSIDE_PIN);
-    int pir_out = digitalRead(OCF_MOTION_OUTSIDE_PIN);
-    int flap_in = digitalRead(OCF_FLAPIR_INSIDE_PIN);
-    int flap_out = digitalRead(OCF_FLAPIR_OUTSIDE_PIN);
-    int tunnel_in = digitalRead(OCF_TUNNELIR_INSIDE_PIN);
-    char buffer[100];
-    sprintf(buffer, "pir_in: %d, pir_out: %d, flap_in: %d, flap_out: %d, tunnel_in: %d", pir_in, pir_out, flap_in, flap_out, tunnel_in);
-    log_d("pir_in: %d, pir_out: %d, flap_in: %d, flap_out: %d, tunnel_in: %d", pir_in, pir_out, flap_in, flap_out, tunnel_in);
-    OCFMQTT::sendMessage("log", buffer);
+    char out[500];
+    OCFFilesystem::readStringFile(CAT_CONFIG_FILE,out,500);
+    log_d("tunnel_in: %s", out);
     server.send(200, "text/html", "debug");
 }
 void OCFWebserver::handle_api_get(){
@@ -67,22 +63,27 @@ void OCFWebserver::handle_api_post(){
         server.send(400, "text/html", "No body received.");
         return;
     }
-    const char* data = server.arg("plain").c_str();
     if(server.arg("plain").length() > OCF_MAX_JSON_SIZE){
         log_d("Request body too large, return 400");
         server.send(413, "text/html", "Request body too large");
         return;
     }
+    strcpy(data_buf, server.arg("plain").c_str());
+    log_d("Data: %s", data_buf);
     StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
-    DeserializationError err = deserializeJson(doc, data);
+    DeserializationError err = deserializeJson(doc, data_buf);
     if(err){
-        log_d("Failed to parse %s: %s", data, err.c_str());
+        log_d("Failed to parse %s: %s", data_buf, err.c_str());
         server.send(500, "text/html", "failed to parse data json");
+        doc.clear();
+        for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
         return;
     }
     if(!doc.containsKey("command")){
-        log_d("data json missing command field: %s", data);
+        log_d("data json missing command field: %s", data_buf);
         server.send(400, "text/html", "data json missing command field");
+        doc.clear();
+        for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
         return;
     }
     if(doc["command"] == "wifiConfig"){
@@ -95,6 +96,8 @@ void OCFWebserver::handle_api_post(){
         log_d("configuring mqtt...");
         if(!OCFMQTT::configure(doc)){
             server.send(400, "text/html", "data json missing field");
+            doc.clear();
+            for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
             return;
         }
         server.send(202, "text/html", "Configuring mqtt...");
@@ -102,28 +105,41 @@ void OCFWebserver::handle_api_post(){
     }else if (doc["command"] == "setAllowState")
     {
         if (!doc.containsKey("direction") || !doc.containsKey("allowed")){
-            log_d("data json missing direction or allowed field: %s", data);
+            log_d("data json missing direction or allowed field: %s", data_buf);
             server.send(400, "text/html", "data json missing direction or allowed field");
+            doc.clear();
+            for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
             return;
         }
         OCFDirection direction = parseDirection(doc["direction"].as<String>());
         //OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
     }else if (doc["command"] == "status"){
         String str;
-        //OCFFlapControl::getFlapStateJson(str);
+        OCFFlapControl::getStateJSON(str);
         server.send(200, "application/json", str);
+        doc.clear();
+        for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
         return;
+    }else if (doc["command"] == "cat"){
+        if (!doc.containsKey("rfid") || !doc.containsKey("name")){
+            log_d("data json missing rfid and name: %s", data_buf);
+            server.send(400, "text/html", "data json missing rfid or name field");
+            doc.clear();
+            for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
+            return;
+        }
+        OCFCat cat = OCFCat();
+        strcpy(cat.name, doc["name"]);
+        cat.rfid = doc["rfid"].as<unsigned long long>();
+        if (doc.containsKey("allowed_in")) cat.allow_in = parseAllowState(doc["allowed_in"]);
+        if (doc.containsKey("allowed_out")) cat.allow_in = parseAllowState(doc["allowed_out"]);
+        OCFFlapControl::cats.insert_or_assign(cat.rfid, cat);
+        OCFFlapControl::saveCats();
     }
     
     server.send(200, "text/html", "api post");
-}
-
-OCFDirection OCFWebserver::parseDirection(String direction){
-    if (direction == "in") return OCFDirection::IN;
-    if (direction == "out") return OCFDirection::OUT;
-    if (direction == "both") return OCFDirection::BOTH;
-    log_d("Failed to parse direction %s", direction);
-    return OCFDirection::NONE;
+    doc.clear();
+    for (int i = 0; i<=OCF_MAX_JSON_SIZE; i++) data_buf[i] = 0x0;
 }
 
 void OCFWebserver::loop(void* parameter){

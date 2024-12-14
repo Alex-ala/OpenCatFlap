@@ -8,6 +8,8 @@
 #include <OCFHelper.h>
 #include <OCFLock.h>
 #include <OCFWifi.h>
+#include <ArxContainer.h>
+#include <OCFCat.h>
 
 /*
 There will be two of these statemachines. One for inside, one for outside.
@@ -63,7 +65,7 @@ private:
 
     void flushRFID();
     void resetRFID();
-    long long readRFID();
+    unsigned long long readRFID();
 
     void updateIdle();
     void updateReading();
@@ -76,6 +78,7 @@ private:
 public:
     void update();
     OCFStateMachine(OCFDirection direction);
+    OCFMachineStates getState();
 };
 
 #endif

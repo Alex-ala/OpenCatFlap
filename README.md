@@ -42,7 +42,7 @@ Used vital parts:
 Just started working on this...
 
 How to configure (for now):
-Wifi: `curl -H "Content-Type: application/json" http://192.168.4.1/api -d '{"command": "wifiConfig", "ssid": "Bockenburg", "passphrase": ""}'`
+Wifi: `curl -H "Content-Type: application/json" http://192.168.4.1/api -d '{"command": "wifiConfig", "ssid": "Bockenburg", "passphrase": "", "ntpServer": "ip preffered, hostname possible"}'`
 MQTT: `curl -H "Content-Type: application/json" 'http://10.5.0.60/api' -d'{"command": "mqttConfig", "server": "mosquitto.ahome", "port": 8011, "ssl": true, "logActivity": true}'`
 MQTT Certificates: 
 ```
