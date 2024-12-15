@@ -21,8 +21,8 @@ void setup() {
   OCFWebserver::init();
   xTaskCreate(OCFWebserver::loop, "webserver", 10000, NULL, 2, NULL);
   // // start MQTT monitor task  
-  // OCFMQTT::init();  
-  // xTaskCreate(OCFMQTT::monitorMQTT,"monitormqtt",2500,NULL, 2, NULL);
+  OCFMQTT::init();  
+  xTaskCreate(OCFMQTT::monitorMQTT,"monitormqtt",5000,NULL, 2, NULL);
 }
 
 void loop() {

@@ -13,9 +13,17 @@ void OCFState::loadConfig(){
         config.allow_out = false;
     }
     if (doc.containsKey("allowed_in")) config.allow_in = doc["allowed_in"].as<bool>();
-    if (doc.containsKey("allowed_out")) config.allow_in = doc["allowed_out"].as<bool>();
+    if (doc.containsKey("allowed_out")) config.allow_out = doc["allowed_out"].as<bool>();
     doc.clear();
     log_d("Flap config loaded. In: %d, Out: %d", config.allow_in, config.allow_out);
+}
+
+void OCFState::saveConfig() {
+    DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
+    doc["allowed_in"] = config.allow_in;
+    doc["allowed_out"] = config.allow_out;
+    OCFFilesystem::writeJsonFile(FLAP_CONFIG_FILE,doc);
+    doc.clear();
 }
 
 void OCFState::loadCats(){
@@ -31,8 +39,8 @@ void OCFState::loadCats(){
         serializeJson(elem,out);
         log_d("elem: %s", out );
         strcpy(cat.name, elem["name"]);
-        if (elem.containsKey("allowed_in")) cat.allow_in = parseAllowState(elem["allowed_in"]);
-        if (elem.containsKey("allowed_out")) cat.allow_in = parseAllowState(elem["allowed_out"]);
+        if (elem.containsKey("allowed_in")) cat.allow_in = elem["allowed_in"].as<bool>();
+        if (elem.containsKey("allowed_out")) cat.allow_out = elem["allowed_out"].as<bool>();
         if (elem.containsKey("last_seen")) {
             cat.last_seen = doc["last_seen"].as<u_int64_t>();
         } else {

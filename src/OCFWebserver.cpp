@@ -17,6 +17,7 @@ void OCFWebserver::init(){
     server.on("/api",HTTPMethod::HTTP_POST, handle_api_post);
     server.on("/api/certs",HTTPMethod::HTTP_POST, handle_certs);
     server.on("/api/cats", HTTPMethod::HTTP_GET, handle_api_cats);
+    server.serveStatic("/", SPIFFS, "/index.html");
     server.begin();
     log_d("Webserver initialized");
     initialized = true;
@@ -48,8 +49,8 @@ void OCFWebserver::handle_certs(){
 
 void OCFWebserver::handle_debug(){
     log_d("Received request on /debug");
-    char out[500];
-    OCFFilesystem::readStringFile(CAT_CONFIG_FILE,out,500);
+    char out[5000];
+    OCFFilesystem::readStringFile(OCF_MQTT_CERT_PATH,out,5000);
     log_d("tunnel_in: %s", out);
     server.send(200, "text/html", "debug");
 }
@@ -119,7 +120,12 @@ void OCFWebserver::handle_api_post(){
             return;
         }
         OCFDirection direction = parseDirection(doc["direction"].as<String>());
-        //OCFFlapControl::setAllowState(direction, doc["allowed"].as<bool>());
+        if (direction == OCFDirection::IN || direction == OCFDirection::BOTH){
+            OCFState::config.allow_in = doc["allowed"].as<bool>();
+        }else if (direction == OCFDirection::OUT || direction == OCFDirection::BOTH){
+            OCFState::config.allow_out = doc["allowed"].as<bool>();
+        }
+        OCFState::saveConfig();
     }else if (doc["command"] == "status"){
         String str;
         OCFState::getStateJSON(str);
@@ -145,8 +151,8 @@ void OCFWebserver::handle_api_post(){
         }     
         strcpy(cat.name, doc["name"]);
         cat.rfid = id;
-        if (doc.containsKey("allowed_in")) cat.allow_in = parseAllowState(doc["allowed_in"]);
-        if (doc.containsKey("allowed_out")) cat.allow_in = parseAllowState(doc["allowed_out"]);
+        if (doc.containsKey("allowed_in")) cat.allow_in = doc["allowed_in"].as<bool>();
+        if (doc.containsKey("allowed_out")) cat.allow_out = doc["allowed_out"].as<bool>();
         OCFState::cats.insert_or_assign(cat.rfid, cat);
         OCFState::saveCats();
     }

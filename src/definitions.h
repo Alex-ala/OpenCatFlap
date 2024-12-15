@@ -40,4 +40,4 @@
 #define WIFI_CONFIG_FILE "/wifi_configuration.json"
 #define MQTT_CONFIG_FILE "/mqtt_configuration.json"
 #define CAT_CONFIG_FILE "/cat_configuration.json"
-#define FLAP_CONFIG_FILE "flap_configuration.json"
+#define FLAP_CONFIG_FILE "/flap_configuration.json"

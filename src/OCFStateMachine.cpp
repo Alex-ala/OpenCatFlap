@@ -108,7 +108,6 @@ unsigned long long OCFStateMachine::readRFID()
     rfidReading = false;
     lastRFID = millis();
     lastRead = lastRFID;
-    Serial.println(tag_id); // TODO: log_d and/or sprintf are not threadsafe
     return tag_id;
     //TODO: tag read wrong
 }
@@ -217,7 +216,7 @@ OCFMachineStates OCFStateMachine::getState(){
 bool OCFStateMachine::checkTag(unsigned long long id){
     std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
     if (it->first != id) {
-        Serial.printf("Unknown rfid read: %d\n", id);
+        log_d("Unknown rfid read: %llu", id);
         return false;
     }
     OCFCat cat = it->second;
@@ -226,9 +225,9 @@ bool OCFStateMachine::checkTag(unsigned long long id){
     log_d("%s detected.", cat.name);
     log_d("Cat entering has state: %d (cat), %d (global)",cat.allow_in, OCFState::config.allow_in);
     if (direction == OCFDirection::IN){
-        if (cat.allow_in == TRUE || (cat.allow_in == UNDEF && OCFState::config.allow_in == true)) return true;
+        if (cat.allow_in == true && OCFState::config.allow_in == true) return true;
     }else{
-        if (cat.allow_out == TRUE || (cat.allow_out == UNDEF && OCFState::config.allow_out == true)) return true;
+        if (cat.allow_out == true && OCFState::config.allow_out == true) return true;
     }
     return false;
 }

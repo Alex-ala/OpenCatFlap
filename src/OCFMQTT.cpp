@@ -18,14 +18,12 @@ void OCFMQTT::init() {
 }
 
 bool OCFMQTT::configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
-    log_d("%s", config.name);
-    if(doc.containsKey("name")) config.name = doc["name"].as<const char*>();
-    log_d("%s", config.name);
+    if(doc.containsKey("name")) strcpy(config.name, doc["name"].as<const char*>());
     if(doc.containsKey("logActivity")) config.logActivity = doc["logActivity"].as<bool>();
-    if(doc.containsKey("server")) config.server = doc["server"].as<const char*>();
+    if(doc.containsKey("server")) strcpy(config.server, doc["server"].as<const char*>());
     if(doc.containsKey("port")) config.port = doc["port"].as<int>();
-    if(doc.containsKey("user")) config.user = doc["user"].as<const char*>();
-    if(doc.containsKey("password")) config.password = doc["password"].as<const char*>();
+    if(doc.containsKey("user")) strcpy(config.user, doc["user"].as<const char*>());
+    if(doc.containsKey("password")) strcpy(config.password, doc["password"].as<const char*>());
     if(doc.containsKey("ssl")) config.ssl = doc["ssl"].as<bool>();
     int size = OCFFilesystem::getFileSize(OCF_MQTT_CA_PATH);
     char* tmp = (char*)malloc(sizeof(char)*size);

@@ -26,20 +26,42 @@ Current state:
 ------
 **Hardware:**
 
-Pretty much decided on the Hardware for now. It will base on an ESP32 (Arduino Nano ESP32 for development) with various sensors and two servos to lock/unlock.
-
-The 3D model is ready to be tested and a printed version is already in use to debug the code.
+It is bases on an ESP32 (Arduino Nano ESP32 for development) with various sensors and two servos to lock/unlock.
+The 3D model is ready to be tested and a printed version is already in use to debug the code. Slight adjustments to the
+antenna design will be done in future.
 
 Used vital parts:
 - 2x PIR (motion detection): Panasonic AMN33111
 - 2x light barrier for flap detection: TCST 1103
-- 2x light barrier for tunnel activity: TCRT5000L
+- 2x light barrier for tunnel passage: ???
 - 2x RFID reader: WL-134
 - 2x Servo: DSM44
 
 **Software:**
 
-Just started working on this...
+The software runs a main process that handles global configs and aggregates events reported by the two state machines.
+
+## State machines
+The locking and unlocking logic is split up into two independent state machines, one for each direction of travel.
+One state machine handles the PIR, RFID and Servo on one side of the cat flap.
+
+This way the flap can idependently unlock for ougoing or incoing cats without acidentally opening the other direction aswell, allowing false passages.
+
+Roughly speaking there are 3 states: Idle (only PIR active to wait for motion), Reading (RFID enabled when motion is detected) and unlocked (when a correct RFID is read).
+
+## Wifi
+
+If no Wifi is configured, the flap acts as an AP opening an open "OpenCatFlap" wifi. One can either use this wifi for full control via api, or send credentials to connect to an existing wifi.
+
+## MQTT
+
+MQTT can be configured to connect to an existing MQTT server. The flap will then send events to topics `opencatflap/<flapname>/<type>`.
+Configuration via MQTT is planned.
+
+## Webserver
+
+Current means to configure the flap is via http. There is a webserver running on :80 that takes requests to configure wifi, mqtt, lock allowance and cats, aswell as getting some status information.
+
 
 How to configure (for now):
 Wifi: `curl -H "Content-Type: application/json" http://192.168.4.1/api -d '{"command": "wifiConfig", "ssid": "Bockenburg", "passphrase": "", "ntpServer": "ip preffered, hostname possible"}'`
@@ -54,4 +76,3 @@ curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=ca' --data-b
 ![pic1](img/IMG_3608.PNG)
 ![pic2](img/IMG_2905.jpg)
 ![cat approved](img/IMG_2830.JPG)
-

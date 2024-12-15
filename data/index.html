@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>OpenCatFlap</title>
+<style>
+.column {
+  float: left;
+  width: 50%;
+}
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+form {display: table;}
+p {display: table-row;}
+input {display: table-cell;}
+label {display: table-cell;}
+</style>
+<script>
+async function submitWifi() {
+    const rawResponse = await fetch("/api", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            command: "wifiConfig",
+            ssid: document.getElementById("ssid").value,
+            passphrase: document.getElementById("passphrase").value,
+            ip: document.getElementById("ip").value,
+            gateway: document.getElementById("gateway").value,
+            netmask: document.getElementById("netmask").value,
+            ntpServer: document.getElementById("ntpServer").value
+        })
+    });
+    const rc = await rawResponse.status
+    if (rc == 200) {
+        document.getElementById("w_configure").value = "Saved!"
+    }else{
+        document.getElementById("w_configure").value = "Error!"
+    }
+}
+async function submitMQTT() {
+    const rawResponse = await fetch("/api", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            command: "mqttConfig",
+            name: document.getElementById("flap_name").value,
+            server: document.getElementById("server").value,
+            port: document.getElementById("port").value,
+            user: document.getElementById("user").value,
+            password: document.getElementById("password").value,
+            ssl: document.getElementById("ssl").value,
+            logActivity: document.getElementById("logActivity").value,
+        })
+    });
+    const rc = await rawResponse.status
+    if (rc == 200) {
+        document.getElementById("m_configure").value = "Saved!"
+    }else{
+        document.getElementById("m_configure").value = "Error!"
+    }
+}
+async function submitCat() {
+    const rawResponse = await fetch("/api", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            command: "cat",
+            name: document.getElementById("cat_name").value,
+            rfid: document.getElementById("rfid").value,
+            allowed_in: document.getElementById("allowed_in").checked,
+            allowed_out: document.getElementById("allowed_out").checked
+        })
+    });
+    const rc = await rawResponse.status
+    if (rc == 200) {
+        document.getElementById("c_configure").value = "Saved!"
+    }else{
+        document.getElementById("cat_configure").value = "Error!"
+    }
+}
+
+async function submitAllow(d) {
+    const rawResponse = await fetch("/api", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            command: "setAllowState",
+            direction: d,
+            allowed: document.getElementById("allow_"+d).checked
+        })
+    });
+    const rc = await rawResponse.status
+    update_status();
+}
+async function submitCertificate(t) {
+    const rawResponse = await fetch("/api/certs?name="+t, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain"
+        },
+        body: document.getElementById(t).value
+        });
+    const rc = await rawResponse.status
+    if (rc == 200) {
+        document.getElementById("m_configure").value = "Saved!"
+    }else{
+        document.getElementById(t+"_configure").value = "Error!"
+    }
+}
+async function update_cats(){
+const rawResponse = await fetch('/api/cats', {
+method: 'GET',
+headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+}
+});
+const content = await rawResponse.json();
+document.getElementById("cats").textContent = JSON.stringify(content, undefined, 2);
+}
+update_cats();
+async function update_status() {
+const rawResponse = await fetch('/api', {
+method: 'POST',
+headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+},
+body: JSON.stringify({command: "status"})
+});
+const content = await rawResponse.json();
+document.getElementById("status").textContent = JSON.stringify(content, undefined, 2);
+document.getElementById("allow_in").disabled = false;
+document.getElementById("allow_in").checked = content["allow_in"];
+document.getElementById("allow_out").disabled = false;
+document.getElementById("allow_out").checked = content["allow_out"];
+}
+update_status();
+</script>
+</head>
+<body>
+
+<h1>OpenCatFlap</h1>
+<div class="row">
+	<div class="column">
+        <h2>Global Setting</h2>
+        <p><label>Allow in:</label><input id="allow_in" type="checkbox" onchange="submitAllow('in')" disabled/></p>
+        <p><label>Allow out:</label><input id="allow_out" type="checkbox" onchange="submitAllow('out')" disabled/></p>
+    	<h2>Status</h2>
+        <pre id="status">Requesting...</pre>
+        <h2>Cats</h2>
+        <pre id="cats">Requesting...</pre>
+    </div>
+    <div class="column">
+    	<h2>Configuration</h2>
+        <h3>Wifi</h3>
+        Configure the wifi to connect to:
+        <div style="border-width:2px;border-style:solid;border-color:black;width:100%">
+        	<form onsubmit="submitWifi(); return false">
+        	<p><label>SSID:</label><input id="ssid"/></p>
+            <p><label>Passphrase:</label><input id="passphrase" type="password"/></p>
+            <p><label>Optional: </label></p>
+            <p><label>IP: </label><input id="ip"/></p>
+            <p><label>Gateway: </label><input id="gateway"/></p>
+            <p><label>Netmask: </label><input id="netmask"/></p>
+            <p><label>NTP-Server: </label><input id="ntpServer"/></p>
+            <p><input id="w_configure" value="Configure" type="submit"/></p>
+            </form>
+        </div>
+        <h3>MQTT</h3>
+        Configure the MQTT server to connect to:
+        <div style="border-width:2px;border-style:solid;border-color:black;width:100%">
+        	<form onsubmit="submitMQTT(); return false">
+        	<p><label>Flap name:</label><input id="flap_name"/></p>
+            <p><label>Server:</label><input id="server"/></p>
+            <p><label>Port:</label><input id="port" type="number"/></p>
+            <p>Optional:</p>
+            <p><label>User:</label><input id="user"/></p>
+            <p><label>Password:</label><input id="password" type="password"/></p>
+            <p><label>SSL:</label><input id="ssl" type="checkbox"/></p>
+            <p><label>Log activity:</label><input id="logActivity" type="checkbox" checked/></p>
+            <p><input id="m_configure" value="Configure" type="submit"/></p>
+            </form>
+        </div>
+        Configure the SSL for MQTT:
+        <div style="border-width:2px;border-style:solid;border-color:black;display:table;width:100%">
+        	<form style="display:table-row;" onsubmit="submitCertificate('ca'); return false">
+        		<label style="vertical-align:top">CA:</label>
+                <textarea id="ca" style="width:70%">CA PEM</textarea>
+                <input id="ca_configure" value="Submit" type="submit" style="vertical-align:top"/>
+            </form>
+          	<form style="display:table-row;" onsubmit="submitCertificate('cert'); return false">
+        		<label style="vertical-align:top">Certificate:</label>
+                <textarea id="cert" style="width:70%">Certificate PEM</textarea>
+                <input id="cert_configure" value="Submit" type="submit" style="vertical-align:top"/>
+            </form>
+          	<form style="display:table-row;" onsubmit="submitCertificate('key'); return false">
+        		<label style="vertical-align:top">Key:</label>
+                <textarea id="key" style="width:70%">Key PEM</textarea>
+                <input id="key_configure" value="Submit" type="submit" style="vertical-align:top"/>
+            </form>
+        </div>
+        <h3>Cat</h3>
+        Configure a cat:
+        <div style="border-width:2px;border-style:solid;border-color:black;width:100%">
+        	<form onsubmit="submitCat(); return false">
+        	<p><label>Name:</label><input id="cat_name"/></p>
+            <p><label>RFID:</label><input id="rfid"/></p>
+            <p>Optional:</p>
+            <p>
+            	<label>Allowed in:</label>
+                <input id="allowed_in" type="checkbox" checked/>
+            </p>
+			<p>
+            	<label>Allowed out:</label>
+                <input id="allowed_out" type="checkbox" checked/>
+            </p>
+            <p><input id="cat_configure" value="Configure" type="submit"/></p>
+            </form>
+        </div>
+    </div>
+</div>    
+
+</body>
+</html>

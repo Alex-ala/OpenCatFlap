@@ -23,7 +23,8 @@ bool OCFWifi::configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
     config.passphrase = (doc.containsKey("passphrase")) ? doc["passphrase"].as<String>() : "";
     config.ip = (doc.containsKey("ip")) ? doc["ip"].as<String>() : "";
     config.gateway = (doc.containsKey("gateway")) ? doc["gateway"].as<String>() : "";
-    config.netmask = (doc.containsKey("netmask")) ? doc["netmask"].as<String>() : "255.255.255.0";
+    config.netmask = (doc.containsKey("netmask")) ? doc["netmask"].as<String>() : "";
+    if (config.netmask == "") config.netmask = "255.255.255.0";
     if (doc.containsKey("ntpServer") && doc["ntpServer"].as<String>() != ""){
         config.ntpServer = doc["ntpServer"].as<String>();  
         log_d("Setting ntp server to %s...", config.ntpServer);
@@ -69,7 +70,7 @@ bool OCFWifi::connectWifi(){
         return false;
         }
     }
-    log_d("Connected to wifi %s with IP %s", config.ssid, WiFi.localIP().toString());
+    log_d("Connected to wifi %s with IP %s and DNS %s", config.ssid, WiFi.localIP().toString(), WiFi.dnsIP().toString());
     timeClient.setPoolServerName(config.ntpServer.c_str());
     timeClient.update();
     log_d("Set ntp server to %s", config.ntpServer);
@@ -80,9 +81,11 @@ bool OCFWifi::connectWifi(){
 // Indefinately long running task that checks if the wifi is connected or an AP is booted up. 
 // If it is not connected for 30s, it tries to reset the Wifi functionality.
 void OCFWifi::monitorWifi(void* params){
+    int fallback = 0;
     while(true){
         while(WiFi.status() == WL_CONNECTED || !configured){
             sleep(10);
+            fallback = 0;
         }
         log_d("Lost WiFi connection (%d), waiting...", WiFi.status());
         int max_wait = 30;
@@ -92,14 +95,17 @@ void OCFWifi::monitorWifi(void* params){
         }
         if(WiFi.status() == WL_CONNECTED) continue;
         log_d("Wifi connection timed out (%d)", WiFi.status());
-        if(!configured){
+        if(!configured || fallback > 10){
             log_d("Trying to restart access point");
+            configured = false;
+            WiFi.disconnect();
             WiFi.softAPdisconnect();
             setupAP();
             sleep(10);
         }else{
-            log_d("Trying to reconnect to wifi");
+            log_d("Trying to reconnect to wifi, try %d", fallback);
             reconnect();
+            fallback++;
         }
 
     }

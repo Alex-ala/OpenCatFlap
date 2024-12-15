@@ -7,14 +7,14 @@
 #include <WiFiClientSecure.h>
 #include <definitions.h>
 struct MQTTConfiguration {
-    const char* server = "";
+    char server[20];
     int port = 0;
-    const char* user = "";
-    const char* password = "";
-    const char* ca = "";
-    const char* cert = "";
-    const char* key = "";
-    const char* name = "doorofdurin";
+    char user[20];
+    char password [64];
+    char* ca = "";
+    char* cert = "";
+    char* key = "";
+    char name[20];
     bool ssl = false;
     bool logActivity = true;
 };
