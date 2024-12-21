@@ -16,10 +16,11 @@ private:
     inline static Servo servoIn;
     inline static Servo servoOut;
 
-    static void moveServoIn(int angle);
-    static void moveServoOut(int angle);
+    
 
 public:
+    static void moveServoIn(int angle);
+    static void moveServoOut(int angle);
     static const char *toString;
     static void enableServo(OCFDirection direction);
     static void disableServo(OCFDirection direction);

@@ -5,4 +5,5 @@
 
 enum OCFDirection { IN, OUT, NONE, BOTH };
 OCFDirection parseDirection(String direction);
+const char* writeDirection(OCFDirection dir);
 #endif

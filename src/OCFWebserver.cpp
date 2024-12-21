@@ -49,9 +49,20 @@ void OCFWebserver::handle_certs(){
 
 void OCFWebserver::handle_debug(){
     log_d("Received request on /debug");
-    char out[5000];
-    OCFFilesystem::readStringFile(OCF_MQTT_CERT_PATH,out,5000);
-    log_d("tunnel_in: %s", out);
+    if (!server.hasArg("dir") || !server.hasArg("val")){
+        server.send(500, "text/html", "debug");
+        return;
+    }
+    int dir = server.arg("dir").toInt();
+    int val = server.arg("val").toInt();
+    if (dir == 1){
+        OCFLock::enableServo(OCFDirection::IN);
+        OCFLock::moveServoIn(val);
+    }else{
+        OCFLock::enableServo(OCFDirection::OUT);
+        OCFLock::moveServoOut(val);
+    }
+    
     server.send(200, "text/html", "debug");
 }
 void OCFWebserver::handle_api_get(){
