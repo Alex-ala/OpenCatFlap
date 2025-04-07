@@ -1,5 +1,4 @@
 (sym_lib_table
   (version 7)
   (lib (name "OpenCatFlap")(type "KiCad")(uri "${KIPRJMOD}/OpenCatFlap.kicad_sym")(options "")(descr ""))
-  (lib (name "Alexander Project1")(type "KiCad")(uri "C:/Users/alex/Downloads/Project Folder/Symbol Library/Alexander Project1.kicad_sym")(options "")(descr ""))
 )

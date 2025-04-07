@@ -31,15 +31,16 @@ The 3D model is ready to be tested and a printed version is already in use to de
 antenna design will be done in future.
 
 Used vital parts:
-- 2x PIR (motion detection): Panasonic AMN33111
+- 2x PIR (motion detection): Panasonic AMN33111, testing with cheaper options
 - 2x light barrier for flap detection: TCST 1103
-- 2x light barrier for tunnel passage: ???
-- 2x RFID reader: WL-134
+- 2x light barrier for tunnel passage: IR LED + NE555 and TSOP18*38 and TSOP18*56
+- 2x RFID reader: EM4095
 - 2x Servo: DSM44
 
 **Software:**
 
 The software runs a main process that handles global configs and aggregates events reported by the two state machines.
+After the last hardware overhaul, quite some work is to be done to update sensors and reading RFID from EM4095 instead of WL-134
 
 ## State machines
 The locking and unlocking logic is split up into two independent state machines, one for each direction of travel.
@@ -73,6 +74,15 @@ curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=cert' --data
 curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=ca' --data-binary @/home/alex/trash/ca.crt
 ```
 
+**Future Improvements:**
+- NE555 is too inconsistant due to 5% tolerance capacitor with bad temperature coefficient
+- Tuning condensators for EM4095 have to be bigger to allow more jiggle-room when building an antenna
+- Cheaper connectors for the PCB and external sensors
+- Battery backup circuit
+- ESP32 directly onboard
+
+![schematics](img/electronics.png)
+![pcb](img/pcb.jpg)
 ![pic1](img/IMG_3608.PNG)
 ![pic2](img/IMG_2905.jpg)
 ![cat approved](img/IMG_2830.JPG)
