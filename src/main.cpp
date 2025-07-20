@@ -1,174 +1,26 @@
 #include <Arduino.h>
 #include <definitions.h>
-
-double timing = 7.5;
-bool carryover = false;
-int cycle_count = 0;
-unsigned long cycles[250];
-bool demod[128];
-byte demod_pos = 0;
-unsigned long last_miros = 0;
-bool reading = false;
-int zero_count = 0;
-bool read_code[128];
-bool code_received = false;
-
-void findClock(){
-  if (cycle_count >= 250){
-    for (int i = 249; i > 0; i--){
-      cycles[i] = cycles[i] - cycles[i-1];
-    }
-    cycles[0] = 0;
-    double average = 0;
-    for (int i = 1; i < 250; i++){
-      average += cycles[i];
-    }
-    average = average / 250;
-    Serial.printf("Average: %f\n", average);
-    cycle_count = 0;
-    detachInterrupt(OCF_RFID_OUTSIDE_CLK);
-    return;
-  }
-  cycles[cycle_count] = micros();
-  cycle_count++;
-  }
-void storeTime(){
-  unsigned long current_micros = micros();
-  unsigned long diff = current_micros - last_miros;
-  last_miros = current_micros;
-  if (diff < timing*39){   // x * 37
-    if (!reading){
-      zero_count++;
-    }else{
-      demod[demod_pos] = 0;
-      demod_pos++;
-    }
-  }else if (diff > timing*40 && diff < timing*55){ // x*40 - x*54.5
-    if (!reading){
-      if ((carryover && zero_count >= 9) || (!carryover && zero_count >= 10)){
-        zero_count = 0;
-        carryover = false;
-        reading = true;
-        for (int i = 0; i < 10; i++){
-          demod[i] = 0;
-        }
-        demod[10] = 1;
-        demod_pos = 11;
-      }
-      carryover = !carryover;
-    }else{
-      if (carryover){
-        if (demod_pos > 126){
-          reading = false;
-          demod_pos = 0;
-          zero_count = 0;
-          carryover = false;
-        }else{
-          demod[demod_pos] = 0;
-          demod[demod_pos + 1] = 1;
-          demod_pos += 2;
-        }
-      }else{
-        demod[demod_pos] = 1;
-        demod_pos++;
-      }
-      carryover = !carryover;
-    }
-  }else if (diff > timing*55 && diff < timing*73){ // x*55.8 - x*73
-    if (!reading){
-      if (zero_count >= 10){
-        zero_count = 0;
-        reading = true;
-
-        for (int i = 0; i < 10; i++){
-          demod[i] = 0;
-        }
-        demod[10] = 1;
-        demod[11] = 1;
-        demod_pos = 12;
-      }
-      carryover = false;
-      zero_count = 0;
-    }else{
-      if (demod_pos > 126){
-        reading = false;
-        demod_pos = 0;
-        return;
-      }
-      demod[demod_pos] = 1;
-      demod[demod_pos+1] = 1;
-      demod_pos += 2;
-    }
-  }else{
-    demod_pos = 0;
-    reading = false;
-    zero_count = 0;
-  }
-  if (demod_pos >= 128){
-    reading = false;
-    demod_pos = 0;
-    code_received = true;
-    for (int i = 0; i < 128; i++){
-      read_code[i] = demod[i];
-      demod[i] = 0;
-    }
-  }
-}
-
-void parse_id(){
-  long long result = 0;
-  int bit_count = 0;
-  int skipped_bits = 0;
-  // Extract 38bit chip id after header
-  for (int i = 11; i < 53; i++) {
-    // Turn into long long while removing spacing 1s
-    bit_count++;
-    if (bit_count > 8) {
-      skipped_bits++;
-      bit_count = 0;
-      continue;
-    }
-    result |= ((long long)read_code[i] << (i - skipped_bits - 11));
-  }
-  Serial.printf("Chip id: %lld\n", result);
-}
+#include <OCF_RFID.h>
+bool inited = false;
 
 void setup() {
   Serial.begin(9600);
   Serial.setDebugOutput(true);
   Serial.println("Starting up...");
-  pinMode(OCF_RFID_OUTSIDE_EN, OUTPUT);
-  pinMode(OCF_RFID_OUTSIDE_CLK, INPUT);
-  pinMode(OCF_RFID_OUTSIDE_DMOD, INPUT);
-  digitalWrite(OCF_RFID_OUTSIDE_EN, HIGH);
-  digitalWrite(OCF_RFID_INSIDE_EN, HIGH);
-  sleep(10);
-  attachInterrupt(OCF_RFID_OUTSIDE_CLK, findClock, RISING);
+  OCF_RFID::init();
+  inited = true;
+  Serial.println("OCF_RFID initialized.");
 }
-
-bool inside = true;
 int count = 0;
 void loop() {
+  if (!inited) {
+    delay(100);
+    return;
+  }
   count++;
-  if (count > 5000000){
+  if (count > 100000000){
     count = 0;
-    inside = !inside;
-    Serial.printf("Inside: %d\n", inside);
-     if (inside){
-    digitalWrite(OCF_RFID_INSIDE_EN, LOW);
-    digitalWrite(OCF_RFID_OUTSIDE_EN, HIGH);
-    detachInterrupt(OCF_RFID_OUTSIDE_DMOD);
-
-  }else{
-    digitalWrite(OCF_RFID_INSIDE_EN, HIGH);
-    digitalWrite(OCF_RFID_OUTSIDE_EN, LOW);
-    attachInterrupt(OCF_RFID_OUTSIDE_DMOD, storeTime, RISING);
-  }
-  }
- 
-  if (code_received){
-    parse_id();
-    code_received = false;
+    OCF_RFID::swap_direction();
   }
 }
 
