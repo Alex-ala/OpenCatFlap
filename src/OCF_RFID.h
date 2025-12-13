@@ -27,6 +27,7 @@ class OCF_RFID {
         void printBitstring();
         void enable();
         void disable();
+        uint64_t extractBits(const uint8_t* bit_data, const int* bit_indices, int count);
 
         OCFDirection direction;
         int pin_power;

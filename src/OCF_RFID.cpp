@@ -112,17 +112,18 @@ void OCF_RFID::onInterruptDmod() {
     }
 }
 
+uint64_t OCF_RFID::extractBits(const uint8_t* bit_data, const int* bit_indices, int count) {
+    uint64_t result = 0;
+    for (int i = 0; i < count; i++) {
+        result = (result << 1) | (bit_data[bit_indices[i]] != 0);
+    }
+    return result;
+}
+
 void OCF_RFID::printBitstring() {
-    int country = 0;
-    int order[10] = {63,62,61,60,59,58,57,56,54,53};
-    for (int idx : order) {
-        country = (country << 1) | (data[idx] != 0);
-    }
-    uint64_t id = 0;
-    int id_order[38] = {52,51,50,49,48,47,45,44,43,42,41,40,39,38,36,35,34,33,32,31,30,29,27,26,25,24,23,22,21,20,18,17,16,15,14,13,12,11};
-    for (int idx : id_order) {
-        id = (id << 1) | (data[idx] != 0);
-    }
-    Serial.printf("Country (dec): %d\n", country);
+    uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
+    uint64_t id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
+    
+    Serial.printf("Country (dec): %u\n", country);
     Serial.printf("ID: %llu\n", id);
 }
