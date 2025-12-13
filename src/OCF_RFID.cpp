@@ -1,200 +1,128 @@
 #include "OCF_RFID.h"
-OCF_RFID* OCF_RFID::inside = new OCF_RFID(IN); 
-OCF_RFID* OCF_RFID::outside = new OCF_RFID(OUT);
-OCFDirection OCF_RFID::active_direction = NONE;
+
+OCF_RFID *OCF_RFID::outside = new OCF_RFID();
+OCF_RFID *OCF_RFID::inside = new OCF_RFID();
+OCF_RFID *OCF_RFID::active_instance = nullptr;
+
+void OCF_RFID::on_clk() {
+    if (active_instance) active_instance->onInterruptClk();
+}
+
+void OCF_RFID::on_dmod() {
+    if (active_instance) active_instance->onInterruptDmod();
+}
 
 void OCF_RFID::init() {
-    //enable(OUT);
+    outside->direction = OCFDirection::OUT;
+    outside->pin_power = OCF_RFID_OUTSIDE_EN;
+    outside->pin_dmod = OCF_RFID_OUTSIDE_DMOD;
+    outside->pin_clk = OCF_RFID_OUTSIDE_CLK;
+    pinMode(outside->pin_power, OUTPUT);
+    digitalWrite(outside->pin_power, HIGH); // Disable initially
+    inside->direction = OCFDirection::IN;
+    inside->pin_power = OCF_RFID_INSIDE_EN;
+    inside->pin_dmod = OCF_RFID_INSIDE_DMOD;
+    inside->pin_clk = OCF_RFID_INSIDE_CLK;
+    pinMode(inside->pin_power, OUTPUT);
+    digitalWrite(inside->pin_power, HIGH); // Disable initially
+    enable(OCFDirection::IN);
 }
+
 void OCF_RFID::enable(OCFDirection direction) {
-    if (direction == IN) {
-        outside->disable(); 
+    if (direction == OCFDirection::IN) {
+        outside->disable();
         inside->enable();
-        active_direction = IN;
-    } else if (direction == OUT) {
+    } else if (direction == OCFDirection::OUT) {
         inside->disable();
         outside->enable();
-        active_direction = OUT;
-    }
-}
-void OCF_RFID::swap_direction() {
-    if (active_direction == OUT) {
-        enable(IN);
-    }
-    else {
-        enable(OUT);
     }
 }
 
-void OCF_RFID::handle_clk() {
-    if (active_direction == OUT) {
-        outside->findClock();
-    } else if (active_direction == IN) {
-        inside->findClock();
-    }
-}
-void OCF_RFID::handle_dmod() {
-    if (active_direction == OUT) {
-        outside->storeTime();
-    } else if (active_direction == IN) {
-        inside->storeTime();
-    }
-}
-
-OCF_RFID::OCF_RFID(OCFDirection direction) : direction(direction) {
-    timing = 7.5;
-    carryover = false;
-    clock_cycle_count = 0;
-    demod_pos = 0;
-    last_micros = 0;
-    reading = false;
-    zero_count = 0;
-    code_received = false;
-    if (direction == IN) {
-        pin_clk = OCF_RFID_INSIDE_CLK;
-        pin_dmod = OCF_RFID_INSIDE_DMOD;
-        pin_power = OCF_RFID_INSIDE_EN;
-    } else if (direction == OUT) {
-        pin_clk = OCF_RFID_OUTSIDE_CLK;
-        pin_dmod = OCF_RFID_OUTSIDE_DMOD;
-        pin_power = OCF_RFID_OUTSIDE_EN;
-    }
-    pinMode(pin_power, OUTPUT);
-    digitalWrite(pin_power, HIGH); // Disable power by default
-    pinMode(pin_clk, INPUT);
-    pinMode(pin_dmod, INPUT);
-}
 void OCF_RFID::enable() {
+    clk_counter = 0;
+    data_index = 0;
+    for (int i = 0; i < 128; i++){
+        data[i] = 0;
+    }
     digitalWrite(pin_power, LOW);
-    clock_cycle_count = 0;
-    demod_pos = 0;
-    last_micros = 0;
-    reading = false;
-    zero_count = 0;
-    code_received = false;
-    attachInterrupt(pin_clk, handle_clk, RISING);
-    attachInterrupt(pin_dmod, handle_dmod, RISING);
+    state = WAITING_FOR_HEADER;
+    active_instance = this;
+    attachInterrupt(pin_clk, OCF_RFID::on_clk, RISING);
+    attachInterrupt(pin_dmod, OCF_RFID::on_dmod, CHANGE);
     Serial.printf("Enable RFID in direction: %s\n", (direction == IN) ? "IN" : "OUT");
 }
+
 void OCF_RFID::disable() {
     digitalWrite(pin_power, HIGH);
     detachInterrupt(pin_clk);
     detachInterrupt(pin_dmod);
 }
 
-void OCF_RFID::parse_id() {
-    long long result = 0;
-    int bit_count = 0;
-    int skipped_bits = 0;
-    // Extract 38bit chip id after header
-    for (int i = 11; i < 53; i++) {
-        // Turn into long long while removing spacing 1s
-        bit_count++;
-        if (bit_count > 8) {
-        skipped_bits++;
-        bit_count = 0;
-        continue;
-        }
-        result |= ((long long)read_code[i] << (i - skipped_bits - 11));
-    }
-    Serial.printf("Chip id: %lld\n", result);
-    }
-void OCF_RFID::findClock() {
-    if (clock_cycle_count >= 250){
-        for (int i = 249; i > 0; i--){
-        clock_cycles[i] = clock_cycles[i] - clock_cycles[i-1];
-        }
-        clock_cycles[0] = 0;
-        double average = 0;
-        for (int i = 1; i < 250; i++){
-        average += clock_cycles[i];
-        }
-        average = average / 250;
-        timing = average;
-        clock_cycle_count = 0;
-    }
-    clock_cycles[clock_cycle_count] = micros();
-    clock_cycle_count++;
+void OCF_RFID::onInterruptClk() {
+    clk_counter++;
 }
-void OCF_RFID::storeTime() {
-    unsigned long current_micros = micros();
-    unsigned long diff = current_micros - last_micros;
-    last_micros = current_micros;
-    if (diff < timing*39){   // x * 37
-        if (!reading){
-            zero_count++;
-        }else{
-            demod[demod_pos] = 0;
-            demod_pos++;
-        }
-    }else if (diff > timing*40 && diff < timing*55){ // x*40 - x*54.5
-        if (!reading){
-            if ((carryover && zero_count >= 9) || (!carryover && zero_count >= 10)){
-                zero_count = 0;
-                carryover = false;
-                reading = true;
-                for (int i = 0; i < 10; i++){
-                    demod[i] = 0;
-                }
-                demod[10] = 1;
-                demod_pos = 11;
-            }
-            carryover = !carryover;
-        }else{
-            if (carryover){
-                if (demod_pos > 126){
-                    reading = false;
-                    demod_pos = 0;
-                    zero_count = 0;
-                    carryover = false;
-                }else{
-                    demod[demod_pos] = 0;
-                    demod[demod_pos + 1] = 1;
-                    demod_pos += 2;
-                }
-            }else{
-                demod[demod_pos] = 1;
-                demod_pos++;
-            }
-            carryover = !carryover;
-        }
-    }else if (diff > timing*55 && diff < timing*73){ // x*55.8 - x*73
-        if (!reading){
-            if (zero_count >= 10){
-                zero_count = 0;
-                reading = true;
 
-                for (int i = 0; i < 10; i++){
-                    demod[i] = 0;
-                }
-                demod[10] = 1;
-                demod[11] = 1;
-                demod_pos = 12;
-            }
-            carryover = false;
-            zero_count = 0;
+void OCF_RFID::onInterruptDmod() {
+    if (state == DISABLE) {
+        return;
+    }
+    bool short_pulse = clk_counter < 24;
+    clk_counter = 0;
+    if (short_pulse && !expect_short) {
+        expect_short = true;
+        return;
+    }else if (short_pulse && expect_short) {
+        data[data_index] = 0;
+        expect_short = false;
+    }else if (!short_pulse && !expect_short) {
+        data[data_index] = 1;
+    }else if (!short_pulse && expect_short) {
+        data_index = 0;
+        expect_short = false;
+        zero_counter = 0;
+        state = WAITING_FOR_HEADER;
+        return;
+    }
+    if (state == WAITING_FOR_HEADER) {
+        if (data[data_index] == 0 && data_index < 10) {
+            zero_counter++;
+            data_index++;
+        }else if (data_index == 10 && data[data_index] == 1 && zero_counter == 10){
+            data_index++;
+            zero_counter = 0;
+            expect_short = false;
+            state = READING;
+            return;
         }else{
-            if (demod_pos > 126){
-                reading = false;
-                demod_pos = 0;
-                return;
-            }
-            demod[demod_pos] = 1;
-            demod[demod_pos+1] = 1;
-            demod_pos += 2;
+            data_index = 0;
+            expect_short = false;
+            zero_counter = 0;
+            state = WAITING_FOR_HEADER;
+            return;
         }
-    }else{
-        demod_pos = 0;
-        reading = false;
-        zero_count = 0;
-    }
-    if (demod_pos >= 128){
-        reading = false;
-        demod_pos = 0;
-        for (int i = 0; i < 128; i++){
-            read_code[i] = demod[i];
-            demod[i] = 0;
+    }else if (state == READING) {
+        data_index++;
+        if (data_index >= 128) {  // 128 Bits für ISO11784
+            printBitstring();
+            data_index = 0;
+            expect_short = false;
+            zero_counter = 0;
+            state = WAITING_FOR_HEADER;
         }
-        parse_id();
     }
+}
+
+void OCF_RFID::printBitstring() {
+    int country = 0;
+    int order[10] = {63,62,61,60,59,58,57,56,54,53};
+    for (int idx : order) {
+        country = (country << 1) | (data[idx] != 0);
+    }
+    uint64_t id = 0;
+    int id_order[38] = {52,51,50,49,48,47,45,44,43,42,41,40,39,38,36,35,34,33,32,31,30,29,27,26,25,24,23,22,21,20,18,17,16,15,14,13,12,11};
+    for (int idx : id_order) {
+        id = (id << 1) | (data[idx] != 0);
+    }
+    Serial.printf("Country (dec): %d\n", country);
+    Serial.printf("ID: %llu\n", id);
 }
