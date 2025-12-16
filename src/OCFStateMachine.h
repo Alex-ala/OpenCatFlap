@@ -10,6 +10,7 @@
 #include <OCFWifi.h>
 #include <ArxContainer.h>
 #include <OCFCat.h>
+#include <OCFRFID.h>
 
 /*
 There will be two of these statemachines. One for inside, one for outside.
@@ -51,21 +52,13 @@ private:
     bool servoAttached;
     uint64_t lastMotion;
     uint64_t lastRFID;
-    uint64_t lastRead;
     char rfidTag[29];
     bool rfidReading;
     HardwareSerial *serial;
     String prefix;
 
     int pin_motion;
-    int pin_rfid_power;
-    int pin_rfid_read;
-    int pin_rfid_write;
-    int pin_rfid_reset;
 
-    void flushRFID();
-    void resetRFID();
-    unsigned long long readRFID();
     bool checkTag(unsigned long long id);
 
     void updateIdle();

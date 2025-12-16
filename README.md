@@ -77,6 +77,7 @@ curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=ca' --data-b
 **Future Improvements:**
 - NE555 is too inconsistant due to 5% tolerance capacitor with bad temperature coefficient
 - Tuning condensators for EM4095 have to be bigger to allow more jiggle-room when building an antenna
+- Condensators to configure EM4095 need to have better tolerance and temperature coefficient to get as close to required frequency as possible. Current ones allow reading big chips, small tubes and implanted ones need a lot of hugging the antenna.
 - Cheaper connectors for the PCB and external sensors
 - Battery backup circuit
 - ESP32 directly onboard
