@@ -52,13 +52,15 @@ private:
     bool servoAttached;
     uint64_t lastMotion;
     uint64_t lastRFID;
-    char rfidTag[29];
+    uint64_t lastRead;
+    unsigned long long rfidTag;
     bool rfidReading;
-    HardwareSerial *serial;
     String prefix;
 
     int pin_motion;
-
+    int pin_rfid_power;
+    int pin_rfid_clk;
+    int pin_rfid_dmod;
     bool checkTag(unsigned long long id);
 
     void updateIdle();
@@ -73,6 +75,8 @@ public:
     void update();
     OCFStateMachine(OCFDirection direction);
     OCFMachineStates getState();
+    void readRFID(unsigned long long tag);
+
 };
 
 #endif

@@ -5,11 +5,7 @@
 #include <OCFHelper.h>
 #include <Arduino.h>
 
-enum OFC_RFID_STATE {
-    WAITING_FOR_HEADER,
-    READING,
-    DISABLE
-};
+
 #define COUNTRY_BITS_COUNT 10
 #define ID_BITS_COUNT 38
 const int COUNTRY_BITS[COUNTRY_BITS_COUNT] = {63,62,61,60,59,58,57,56,54,53};
@@ -17,15 +13,27 @@ const int ID_BITS[ID_BITS_COUNT] = {52,51,50,49,48,47,45,44,43,42,41,40,39,38,36
 
 
 class OCFRFID {
+    enum OFC_RFID_STATE {
+        WAITING_FOR_HEADER,
+        READING,
+        DISABLE
+    };
     public:
         static void init();
+        static void enable(OCFDirection direction);
+        static void disable(OCFDirection direction);
     private:
         static OCFRFID* outside;
         static OCFRFID* inside;
         static OCFRFID* active_instance;
-        static void enable(OCFDirection direction);
+        static bool outside_enabled;
+        static bool inside_enabled;
+        static unsigned int switch_counter;
         static void on_clk();
         static void on_dmod();
+        static void activate(OCFDirection direction);
+        static void deactivate(OCFDirection direction);
+
 
         void onInterruptClk();
         void onInterruptDmod();
@@ -39,7 +47,7 @@ class OCFRFID {
         int pin_dmod;
         int pin_clk;
 
-        int clk_counter;
+        unsigned int clk_counter;
         OFC_RFID_STATE state;
         bool data[128];
         int data_index;

@@ -11,6 +11,8 @@ OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
     servoAttached = false;
     lastMotion = 0;
     lastRFID = 0;
+    rfidTag = 0;
+    lastRead = 0;
     rfidReading = false;
 
     if (direction == OCFDirection::IN)
@@ -23,7 +25,7 @@ OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
         pin_motion = OCF_MOTION_INSIDE_PIN;
         prefix = "Out:";
     }
-    // TODO: Initialize OCFRFID
+    OCFRFID::init();
     pinMode(pin_motion, INPUT_PULLUP);
     currentState = OCFMachineStates::IDLE;
     log_d("%s StateMachine initialized", prefix);
@@ -55,9 +57,13 @@ void OCFStateMachine::updateReading()
         lastMotion = millis();
     }
     // Return to Idle after 10s of no motion
-    if (lastMotion <= millis() - 10000)
+    if (lastMotion <= millis() - 10000) {
         transitionReadingToIdle();
-    // TODO: Progress to Unlocked if a valid RFID is read
+    }else if (lastRFID <= millis() - 2000) {
+        if (checkTag(rfidTag)) {
+            transitionReadingToUnlocked();
+        }
+    }
 }
 
 void OCFStateMachine::updateUnlocked()
@@ -69,9 +75,6 @@ void OCFStateMachine::updateUnlocked()
     // Return to Reading after 5s of no valid RFID
     if (lastRFID <= millis() - 5000)
         transitionUnlockedToReading();
-    // TODO: Return to Reading if an invalid RFID is read
-    long long tag = readRFID();
-    if (tag != 0 && !checkTag(tag)) transitionUnlockedToReading();
 }
 
 void OCFStateMachine::transitionIdleToReading()
@@ -80,7 +83,7 @@ void OCFStateMachine::transitionIdleToReading()
     servoAttached = true;
     rfidReading = false;
     lastRFID = 0;
-    // TODO: Enable RFID
+    OCFRFID::enable(direction);
     currentState = OCFMachineStates::READING;
     log_d("%s Transition to Reading", prefix);
 }
@@ -92,7 +95,9 @@ void OCFStateMachine::transitionReadingToIdle()
     rfidReading = false;
     lastMotion = 0;
     lastRFID = 0;
-    // TODO: Disable RFID
+    lastRead = 0;
+    rfidTag = 0;
+    OCFRFID::disable(direction);
     currentState = OCFMachineStates::IDLE;
     log_d("%s Transition to Idle", prefix);
 }
