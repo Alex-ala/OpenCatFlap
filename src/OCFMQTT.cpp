@@ -1,4 +1,5 @@
 #include <OCFMQTT.h>
+#include <OCFWifi.h>
 
 bool OCFMQTT::connected = false;
 bool OCFMQTT::configured = false;
@@ -90,7 +91,10 @@ bool OCFMQTT::connectMQTT(){
     }
     if (connected){
         log_d("Connected to MQTT at %s:%d", config.server, config.port);
-        sendMessage("startup", "Connected to MQTT");
+        unsigned long ts = OCFWifi::getEpochTime();
+        char message[30];
+        sprintf(message, "%lu Connected to MQTT", ts);
+        sendMessage("startup", message);
     }else{
         log_d("Failed to connect to MQTT at %s:%d", config.server, config.port);
         mqttclient.disconnect();
@@ -99,7 +103,7 @@ bool OCFMQTT::connectMQTT(){
     return true;
 }
 
-// Indefinately long running task that checks if the wifi is connected or an AP is booted up. 
+// Indefinately long running task that checks if the wifi is connected or an AP is booted up.
 // If it is not connected for 30s, it tries to reset the Wifi functionality.
 void OCFMQTT::monitorMQTT(void* params){
     while(true){

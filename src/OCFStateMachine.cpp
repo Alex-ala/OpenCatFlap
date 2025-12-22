@@ -59,7 +59,7 @@ void OCFStateMachine::updateReading()
     // Return to Idle after 10s of no motion
     if (lastMotion <= millis() - 10000) {
         transitionReadingToIdle();
-    }else if (lastRFID <= millis() - 2000) {
+    }else if (lastRFID != 0 && lastRFID <= millis() - 2000) {
         if (checkTag(rfidTag)) {
             transitionReadingToUnlocked();
         }
@@ -73,7 +73,7 @@ void OCFStateMachine::updateUnlocked()
         lastMotion = millis();
     }
     // Return to Reading after 5s of no valid RFID
-    if (lastRFID <= millis() - 5000)
+    if (lastRFID != 0 && lastRFID <= millis() - 5000)
         transitionUnlockedToReading();
 }
 

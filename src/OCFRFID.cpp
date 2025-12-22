@@ -1,5 +1,6 @@
 #include "OCFRFID.h"
 #include <OCFMQTT.h>
+#include <mutex>
 
 OCFRFID *OCFRFID::outside = new OCFRFID();
 OCFRFID *OCFRFID::inside = new OCFRFID();
@@ -7,6 +8,7 @@ OCFRFID *OCFRFID::active_instance = nullptr;
 bool OCFRFID::inside_enabled = false;
 bool OCFRFID::outside_enabled = false;
 unsigned int OCFRFID::switch_counter = 0;
+std::mutex rfid_mutex;
 
 void OCFRFID::on_clk() {
     if (active_instance) active_instance->onInterruptClk();
@@ -43,6 +45,7 @@ void OCFRFID::init() {
     inside_enabled = false;
     outside_enabled = false;
     switch_counter = 0;
+    log_d("RFID initialized");
 }
 
 void OCFRFID::enable(OCFDirection direction) {
@@ -80,9 +83,11 @@ void OCFRFID::activate(OCFDirection direction) {
     if (direction == OCFDirection::IN) {
         outside->disable();
         inside->enable();
+        log_d("Enable RFID inside");
     } else if (direction == OCFDirection::OUT) {
         inside->disable();
         outside->enable();
+        log_d("Enable RFID outside");
     }
 }
 void OCFRFID::deactivate(OCFDirection direction) {
@@ -123,6 +128,7 @@ void OCFRFID::onInterruptDmod() {
     if (state == DISABLE) {
         return;
     }
+    std::lock_guard<std::mutex> lock(rfid_mutex);
     bool short_pulse = clk_counter < 24;
     clk_counter = 0;
     if (short_pulse && !expect_short) {
@@ -159,13 +165,11 @@ void OCFRFID::onInterruptDmod() {
         }
     }else if (state == READING) {
         data_index++;
-        if (data_index >= 128) {  // 128 Bits für ISO11784
+        if (data_index >= 128) {
             uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
             unsigned long long id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
             id = id + (country * 1000000000000ULL);
-            char message[40];
-            sprintf(message, "RFID read: %ull", id);
-            OCFMQTT::sendMessage("debug", message);
+            Serial.printf("RFID read: %llu\n", id);
             data_index = 0;
             expect_short = false;
             zero_counter = 0;
@@ -183,9 +187,5 @@ uint64_t OCFRFID::extractBits(const uint8_t* bit_data, const int* bit_indices, i
 }
 
 void OCFRFID::printBitstring() {
-    uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
-    uint64_t id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
 
-    Serial.printf("Country (dec): %u\n", country);
-    Serial.printf("ID: %llu\n", id);
 }
