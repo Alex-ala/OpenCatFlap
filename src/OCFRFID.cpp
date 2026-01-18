@@ -1,5 +1,6 @@
 #include "OCFRFID.h"
 #include <OCFMQTT.h>
+#include <OCFStateMachine.h>
 #include <mutex>
 
 OCFRFID *OCFRFID::outside = new OCFRFID();
@@ -29,13 +30,15 @@ void OCFRFID::on_dmod() {
     if (active_instance) active_instance->onInterruptDmod();
 }
 
-void OCFRFID::init() {
+void OCFRFID::init(OCFStateMachine* machine_outside, OCFStateMachine* machine_inside) {
+    outside->machine = machine_outside;
     outside->direction = OCFDirection::OUT;
     outside->pin_power = OCF_RFID_OUTSIDE_EN;
     outside->pin_dmod = OCF_RFID_OUTSIDE_DMOD;
     outside->pin_clk = OCF_RFID_OUTSIDE_CLK;
     pinMode(outside->pin_power, OUTPUT);
     digitalWrite(outside->pin_power, HIGH); // Disable initially
+    inside->machine = machine_inside;
     inside->direction = OCFDirection::IN;
     inside->pin_power = OCF_RFID_INSIDE_EN;
     inside->pin_dmod = OCF_RFID_INSIDE_DMOD;
@@ -111,7 +114,6 @@ void OCFRFID::enable() {
     attachInterrupt(pin_dmod, OCFRFID::on_dmod, CHANGE);
     char message[30];
     sprintf(message, "RFID enabled %s", writeDirection(direction));
-    OCFMQTT::sendMessage("debug", message);
 }
 
 void OCFRFID::disable() {
@@ -169,6 +171,7 @@ void OCFRFID::onInterruptDmod() {
             uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
             unsigned long long id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
             id = id + (country * 1000000000000ULL);
+            machine->readRFID(id);
             Serial.printf("RFID read: %llu\n", id);
             data_index = 0;
             expect_short = false;

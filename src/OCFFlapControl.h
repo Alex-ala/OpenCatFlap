@@ -6,6 +6,7 @@
 #include <OCFStateMachine.h>
 #include <OCFConfig.h>
 #include <OCFCat.h>
+#include <OCFRFID.h>
 
 /*  NEW IDEAS
 std::queue<const char*> activityLog;

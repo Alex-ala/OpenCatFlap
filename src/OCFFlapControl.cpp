@@ -6,6 +6,7 @@ void OCFFlapControl::init(){
     OCFState::loadCats();
     stateMachineOutside = new OCFStateMachine(OCFDirection::OUT);
     stateMachineInside = new OCFStateMachine(OCFDirection::IN);
+    OCFRFID::init(stateMachineOutside, stateMachineInside);
 }
 
 void  OCFFlapControl::deinit(){

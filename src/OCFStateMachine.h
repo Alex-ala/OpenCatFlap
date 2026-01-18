@@ -44,6 +44,7 @@ enum OCFMachineStates
     READING,
     UNLOCKED
 };
+class OCFRFID;
 class OCFStateMachine
 {
 private:
@@ -55,7 +56,7 @@ private:
     uint64_t lastRead;
     unsigned long long rfidTag;
     bool rfidReading;
-    String prefix;
+    const char * directionName;
 
     int pin_motion;
     int pin_rfid_power;
