@@ -41,6 +41,8 @@ class OCFRFID {
 
         void onInterruptDmod();
         void decodeEdge(int16_t clk_count, BaseType_t* higher_woken);
+        uint8_t frameByte(int block);
+        bool checkFrame();
         void setupCounter();
         void printBitstring();
         void enable();

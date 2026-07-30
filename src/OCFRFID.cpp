@@ -16,6 +16,8 @@ struct RfidRead {
 };
 
 static portMUX_TYPE rfid_mux = portMUX_INITIALIZER_UNLOCKED;
+static volatile uint32_t crc_failures = 0;
+static uint32_t reported_crc_failures = 0;
 
 void OCFRFID::on_dmod() {
     if (active_instance) active_instance->onInterruptDmod();
@@ -79,6 +81,11 @@ void OCFRFID::setupCounter() {
 void OCFRFID::process() {
     if (inside_enabled && outside_enabled && (millis() - last_switch_ms >= OCF_RFID_SWITCH_MS)) {
         activate(active_instance == inside ? OCFDirection::OUT : OCFDirection::IN);
+    }
+    uint32_t failures = crc_failures;
+    if (failures != reported_crc_failures) {
+        log_d("RFID frames rejected by CRC: %u", failures);
+        reported_crc_failures = failures;
     }
     if (tag_queue == nullptr) return;
     RfidRead read;
@@ -217,14 +224,41 @@ void OCFRFID::decodeEdge(int16_t clk_count, BaseType_t* higher_woken) {
             uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
             unsigned long long id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
             id = id + (country * 1000000000000ULL);
-            RfidRead read = { id, direction };
-            xQueueSendFromISR(tag_queue, &read, higher_woken);
+            if (checkFrame()) {
+                RfidRead read = { id, direction };
+                xQueueSendFromISR(tag_queue, &read, higher_woken);
+            } else {
+                crc_failures++;
+            }
             data_index = 0;
             expect_short = false;
             zero_counter = 0;
             state = WAITING_FOR_HEADER;
         }
     }
+}
+
+uint8_t OCFRFID::frameByte(int block) {
+    uint8_t value = 0;
+    int base = 11 + block * 9;
+    for (int p = 0; p < 8; p++) {
+        if (data[base + p]) value |= (1 << p);
+    }
+    return value;
+}
+
+bool OCFRFID::checkFrame() {
+    for (int block = 0; block < 13; block++) {
+        if (!data[11 + block * 9 + 8]) return false;
+    }
+    uint16_t crc = 0;
+    for (int block = 0; block < 8; block++) {
+        crc ^= frameByte(block);
+        for (int i = 0; i < 8; i++) {
+            crc = (crc & 1) ? (crc >> 1) ^ OCF_RFID_CRC_POLY : (crc >> 1);
+        }
+    }
+    return crc == (uint16_t)(frameByte(8) | (frameByte(9) << 8));
 }
 
 uint64_t OCFRFID::extractBits(const uint8_t* bit_data, const int* bit_indices, int count) {

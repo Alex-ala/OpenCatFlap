@@ -27,6 +27,7 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | B3 | `OCFState::cats` / PubSubClient shared across tasks unguarded | several | **High** |
 | B4 | Busy-wait loops without yield → watchdog resets | `OCFWebserver.cpp:182`, `OCFWifi.cpp:66` | **High** |
 | C4 | MQTT message flood: one publish per 10 ms tick | `OCFStateMachine.cpp:139-163` | **High** |
+| C15 | Decoded RFID frames were never CRC-checked — corruption became a false cat ID | `OCFRFID.cpp` | **High** — ✅ fixed |
 | — | remaining Medium/Low items below | | |
 
 ---
@@ -601,6 +602,31 @@ inside a `<script>` in `<head>` (`:20`–`:149`), i.e. **before `<body>` is pars
 **Fix:** move the script to the end of `<body>`, or add `defer`, or wrap the calls in
 `window.addEventListener('DOMContentLoaded', ...)`. While there, add a `setInterval` so
 the status actually refreshes.
+
+### C15. Decoded RFID frames were never validated (High) — ✅ FIXED
+
+`decodeEdge` gated entry into `READING` on the header, then counted 128 bits and emitted
+whatever `extractBits` pulled from fixed positions. Bits 64+ — where ISO11784/11785 FDX-B
+carries its 16-bit CRC, as documented in `RFID.md` — were never looked at. So *any*
+mid-frame corruption, from a missed DMOD edge, marginal antenna coupling or the carrier
+frequency tolerance noted in the README, produced a plausible-looking but wrong ID rather
+than being discarded. With no validation anywhere downstream, that is a false cat ID.
+
+**Fixed** by `OCFRFID::checkFrame()`, which a frame must pass before it is queued:
+
+1. all 13 separator bits (every 9th bit, `data[11 + 9n + 8]`) must be `1`
+2. CRC-16/CCITT-Kermit (reflected poly `0x8408`, init `0x0000`) over the first 8 data
+   bytes must match the received checksum in blocks 8 and 9
+
+Rejected frames increment a counter reported from `process()` (`"RFID frames rejected by
+CRC: %u"`) so a flapping antenna is visible rather than silent.
+
+**Verified offline against real data.** The captured frame in `RFID.md` was used as the
+fixture: the bit mapping reproduces its known ID (158002010860) and country (900) exactly,
+and Kermit is the only common CRC-16 variant that reproduces its checksum `0x0D0B`
+(X-25, CCITT-FALSE and XMODEM all disagree). Flipping each of the 117 payload bits in turn
+against the real C++ shows 93 of 117 rejected; the 24 that pass are precisely the trailer
+bits, which the CRC does not cover by design. **Every bit feeding the cat ID is protected.**
 
 ### C14. Filesystem mount failure is not handled (Low)
 
