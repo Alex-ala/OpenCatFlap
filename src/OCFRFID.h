@@ -4,6 +4,8 @@
 #include <definitions.h>
 #include <OCFHelper.h>
 #include <Arduino.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 
 #define COUNTRY_BITS_COUNT 10
@@ -22,13 +24,16 @@ class OCFRFID {
         static void init(OCFStateMachine* machine_outside, OCFStateMachine* machine_inside);
         static void enable(OCFDirection direction);
         static void disable(OCFDirection direction);
+        static void process();
     private:
         static OCFRFID* outside;
         static OCFRFID* inside;
-        static OCFRFID* active_instance;
+        static OCFRFID* volatile active_instance;
         static bool outside_enabled;
         static bool inside_enabled;
         static unsigned int switch_counter;
+        static volatile bool switch_requested;
+        static QueueHandle_t tag_queue;
         static void on_clk();
         static void on_dmod();
         static void activate(OCFDirection direction);
@@ -37,6 +42,7 @@ class OCFRFID {
 
         void onInterruptClk();
         void onInterruptDmod();
+        void decodeEdge(BaseType_t* higher_woken);
         void printBitstring();
         void enable();
         void disable();
@@ -48,7 +54,7 @@ class OCFRFID {
         int pin_dmod;
         int pin_clk;
 
-        unsigned int clk_counter;
+        volatile unsigned int clk_counter;
         OFC_RFID_STATE state;
         bool data[128];
         int data_index;

@@ -1,15 +1,22 @@
 #include "OCFRFID.h"
 #include <OCFMQTT.h>
 #include <OCFStateMachine.h>
-#include <mutex>
 
 OCFRFID *OCFRFID::outside = new OCFRFID();
 OCFRFID *OCFRFID::inside = new OCFRFID();
-OCFRFID *OCFRFID::active_instance = nullptr;
+OCFRFID *volatile OCFRFID::active_instance = nullptr;
 bool OCFRFID::inside_enabled = false;
 bool OCFRFID::outside_enabled = false;
 unsigned int OCFRFID::switch_counter = 0;
-std::mutex rfid_mutex;
+volatile bool OCFRFID::switch_requested = false;
+QueueHandle_t OCFRFID::tag_queue = nullptr;
+
+struct RfidRead {
+    unsigned long long id;
+    OCFDirection direction;
+};
+
+static portMUX_TYPE rfid_mux = portMUX_INITIALIZER_UNLOCKED;
 
 void OCFRFID::on_clk() {
     if (active_instance) active_instance->onInterruptClk();
@@ -17,11 +24,7 @@ void OCFRFID::on_clk() {
         switch_counter++;
         if (switch_counter >= 134000) {
             switch_counter = 0;
-            if (active_instance == inside) {
-                activate(OCFDirection::OUT);
-            } else {
-                activate(OCFDirection::IN);
-            }
+            switch_requested = true;
         }
     }
 }
@@ -48,7 +51,25 @@ void OCFRFID::init(OCFStateMachine* machine_outside, OCFStateMachine* machine_in
     inside_enabled = false;
     outside_enabled = false;
     switch_counter = 0;
+    switch_requested = false;
+    if (tag_queue == nullptr) tag_queue = xQueueCreate(8, sizeof(RfidRead));
     log_d("RFID initialized");
+}
+
+void OCFRFID::process() {
+    if (switch_requested) {
+        switch_requested = false;
+        if (inside_enabled && outside_enabled) {
+            activate(active_instance == inside ? OCFDirection::OUT : OCFDirection::IN);
+        }
+    }
+    if (tag_queue == nullptr) return;
+    RfidRead read;
+    while (xQueueReceive(tag_queue, &read, 0) == pdTRUE) {
+        Serial.printf("RFID read: %llu\n", read.id);
+        OCFRFID *reader = (read.direction == OCFDirection::IN) ? inside : outside;
+        if (reader->machine) reader->machine->readRFID(read.id);
+    }
 }
 
 void OCFRFID::enable(OCFDirection direction) {
@@ -102,14 +123,18 @@ void OCFRFID::deactivate(OCFDirection direction) {
 }
 
 void OCFRFID::enable() {
+    portENTER_CRITICAL(&rfid_mux);
     clk_counter = 0;
     data_index = 0;
     for (int i = 0; i < 128; i++){
         data[i] = 0;
     }
-    digitalWrite(pin_power, LOW);
     state = WAITING_FOR_HEADER;
+    expect_short = false;
+    zero_counter = 0;
     active_instance = this;
+    portEXIT_CRITICAL(&rfid_mux);
+    digitalWrite(pin_power, LOW);
     attachInterrupt(pin_clk, OCFRFID::on_clk, RISING);
     attachInterrupt(pin_dmod, OCFRFID::on_dmod, CHANGE);
 }
@@ -125,10 +150,17 @@ void OCFRFID::onInterruptClk() {
 }
 
 void OCFRFID::onInterruptDmod() {
+    BaseType_t higher_woken = pdFALSE;
+    portENTER_CRITICAL_ISR(&rfid_mux);
+    decodeEdge(&higher_woken);
+    portEXIT_CRITICAL_ISR(&rfid_mux);
+    if (higher_woken) portYIELD_FROM_ISR();
+}
+
+void OCFRFID::decodeEdge(BaseType_t* higher_woken) {
     if (state == DISABLE) {
         return;
     }
-    std::lock_guard<std::mutex> lock(rfid_mutex);
     bool short_pulse = clk_counter < 24;
     clk_counter = 0;
     if (short_pulse && !expect_short) {
@@ -169,8 +201,8 @@ void OCFRFID::onInterruptDmod() {
             uint32_t country = extractBits((const uint8_t*)data, COUNTRY_BITS, COUNTRY_BITS_COUNT);
             unsigned long long id = extractBits((const uint8_t*)data, ID_BITS, ID_BITS_COUNT);
             id = id + (country * 1000000000000ULL);
-            machine->readRFID(id);
-            Serial.printf("RFID read: %llu\n", id);
+            RfidRead read = { id, direction };
+            xQueueSendFromISR(tag_queue, &read, higher_woken);
             data_index = 0;
             expect_short = false;
             zero_counter = 0;

@@ -17,8 +17,8 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | A4 | `sprintf` into `char[30]` overflows the stack frame | `OCFStateMachine.cpp:144,153` | **Critical** — ✅ fixed |
 | A5 | Dereferencing `std::map::end()` on unknown RFID | `OCFStateMachine.cpp:142`, `OCFWebserver.cpp:158` | **Critical** — ✅ fixed |
 | A6 | Unbounded `strcpy` from network JSON into fixed buffers | `OCFMQTT.cpp:22-27`, `OCFWebserver.cpp:163` | **Critical** — ✅ fixed |
-| B1 | `std::mutex` locked inside an ISR | `OCFRFID.cpp:133` | **Critical** |
-| B2 | ISRs not in IRAM; call `Serial.printf`, `log_d`, `attachInterrupt` | `OCFRFID.cpp` | **Critical** |
+| B1 | `std::mutex` locked inside an ISR | `OCFRFID.cpp:133` | **Critical** — ✅ fixed |
+| B2 | ISRs not in IRAM; call `Serial.printf`, `log_d`, `attachInterrupt` | `OCFRFID.cpp` | **Critical** — ⚠️ partly fixed |
 | C1 | `unlock(BOTH)` locks both directions | `OCFLock.cpp:91-95` | **High** |
 | C2 | Missing braces → flap re-locks on every 10 ms tick | `OCFStateMachine.cpp:87-89` | **High** |
 | C3 | `millis() - 10000` underflows during first 10 s after boot | `OCFStateMachine.cpp:58,73,87` | **High** |
@@ -277,7 +277,20 @@ reason. **Fix:** take `const JsonDocument&` — one overload replaces both.
 
 ## B. Concurrency and interrupt handling
 
-### B1. `std::mutex` locked inside an ISR (Critical)
+### B1. `std::mutex` locked inside an ISR (Critical) — ✅ FIXED
+
+> **Fixed.** Replaced with a `portMUX_TYPE` spinlock taken on *both* sides:
+> `portENTER_CRITICAL_ISR` around the decode, `portENTER_CRITICAL` in `enable()` where the
+> decoder state is reset from task context — the race the mutex was presumably aiming at,
+> which it did not actually cover. The decode logic itself is unchanged; it moved verbatim
+> into `decodeEdge()` so the critical section has a single entry and exit. Frame-complete
+> work (`Serial.printf`, `machine->readRFID()`) now goes through a `xQueueSendFromISR`
+> queue drained by `OCFRFID::process()` from the flap task.
+>
+> **Correction to the original text below:** the mutex's *timing* cost was small relative
+> to the ±8 clock-cycle classification margin, so it was unlikely to be causing misreads on
+> its own. The reason to remove it is that `xSemaphoreTake` from an ISR is illegal and does
+> priority-inheritance bookkeeping against whatever task happened to be interrupted.
 
 `OCFRFID.cpp:133`:
 
@@ -295,7 +308,23 @@ writer.
 `portEXIT_CRITICAL` (or `taskDISABLE_INTERRUPTS` for the short snapshot), and mark the
 shared fields `volatile`.
 
-### B2. ISR code lives in flash and calls non-ISR-safe functions (Critical)
+### B2. ISR code lives in flash and calls non-ISR-safe functions (Critical) — ⚠️ PARTLY FIXED
+
+> **Done with B1:** `Serial.printf` (~26 ms of blocking at 9600 baud, right at frame
+> completion) and `machine->readRFID()` are off the ISR, and the antenna switch no longer
+> calls `activate()`/`attachInterrupt()` from interrupt context — `on_clk` sets
+> `switch_requested` and `process()` performs the switch.
+>
+> **Correction:** the claim below that non-IRAM ISRs cause an immediate panic is wrong for
+> this build. `CONFIG_ARDUINO_ISR_IRAM` is *not set* in the ESP32-S3 sdkconfig, so
+> `ARDUINO_ISR_ATTR` is empty and the GPIO ISR service is installed with flag `0`. Non-IRAM
+> interrupts are **masked**, not faulted, while the flash cache is disabled — so edges are
+> silently dropped during every SPIFFS write rather than crashing.
+>
+> **Still open:** marking `on_clk`/`on_dmod` `IRAM_ATTR` alone would not help, because
+> `__onPinInterrupt` (the shared dispatcher) and the registration flag are the binding
+> constraint. Needs either `CONFIG_ARDUINO_ISR_IRAM` in the framework build or a hand-
+> registered handler with `ESP_INTR_FLAG_IRAM`. Superseded in practice by **B7** (PCNT).
 
 * `OCFRFID::on_clk`, `on_dmod`, `onInterruptClk`, `onInterruptDmod`, `extractBits`,
   `OCFStateMachine::readRFID` are **not** marked `IRAM_ATTR`. When the flash cache is
@@ -670,8 +699,9 @@ write-only local in `OCFRFID::enable`, and the unused `file_read` variables.
    ~~A7 (file handles)~~ done.
 3. **Make the state machine actually work:** C2 (braces), C3 (millis underflow), C4 (MQTT
    flood), C1.
-4. **Rework the ISR path** to queue-based handoff with `IRAM_ATTR` (B2/B3), then consider
-   PCNT (B7).
+4. **Rework the ISR path:** ~~queue-based handoff (B1)~~ done; IRAM registration (B2) and
+   `volatile`/tearing (B3) still open. Then **PCNT (B7)** — agreed with Alex as the real
+   fix for missed clock flanks, deferred 2026-07-30.
 5. **Lock down the API** (D1) and add task synchronisation (B4).
 6. **Build hygiene:** pin deps + migrate to ArduinoJson 7 (E1), enable `-Wall -Wextra` (E3),
    split debug/release builds (E2).

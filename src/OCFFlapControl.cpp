@@ -16,6 +16,7 @@ void  OCFFlapControl::deinit(){
 
 void  OCFFlapControl::loop(void* params){
     while(true){
+        OCFRFID::process();
         stateMachineInside->update();
         stateMachineOutside->update();
         delay(10);
