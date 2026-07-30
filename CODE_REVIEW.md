@@ -12,8 +12,8 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | # | Issue | Location | Severity |
 |---|-------|----------|----------|
 | A1 | LEDC channel leak — servos stop working after ~8 lock cycles | `OCFLock.cpp` / ServoESP32 | **Critical** — ✅ fixed |
-| A2 | MQTT cert/key heap buffers leaked on every `configure()` | `OCFMQTT.cpp:29-40` | **Critical** |
-| A3 | Heap overflow (off-by-one) writing the NUL terminator | `OCFFilesystem.cpp:102` + `OCFMQTT.cpp:30` | **Critical** |
+| A2 | MQTT cert/key heap buffers leaked on every `configure()` | `OCFMQTT.cpp:29-40` | **Critical** — ✅ fixed |
+| A3 | Heap overflow (off-by-one) writing the NUL terminator | `OCFFilesystem.cpp:102` + `OCFMQTT.cpp:30` | **Critical** — ✅ fixed |
 | A4 | `sprintf` into `char[30]` overflows the stack frame | `OCFStateMachine.cpp:144,153` | **Critical** — ✅ fixed |
 | A5 | Dereferencing `std::map::end()` on unknown RFID | `OCFStateMachine.cpp:142`, `OCFWebserver.cpp:158` | **Critical** — ✅ fixed |
 | A6 | Unbounded `strcpy` from network JSON into fixed buffers | `OCFMQTT.cpp:22-27`, `OCFWebserver.cpp:163` | **Critical** — ✅ fixed |
@@ -23,7 +23,7 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | C2 | Missing braces → flap re-locks on every 10 ms tick | `OCFStateMachine.cpp:87-89` | **High** |
 | C3 | `millis() - 10000` underflows during first 10 s after boot | `OCFStateMachine.cpp:58,73,87` | **High** |
 | D1 | No authentication on any endpoint; open setup AP | `OCFWebserver.cpp` | **High** |
-| A7 | File handles leaked (`getFileSize`, `writeJsonFile`) | `OCFFilesystem.cpp:80-90, 38-78` | **High** |
+| A7 | File handles leaked (`getFileSize`, `writeJsonFile`) | `OCFFilesystem.cpp:80-90, 38-78` | **High** — ✅ fixed |
 | B3 | `OCFState::cats` / PubSubClient shared across tasks unguarded | several | **High** |
 | B4 | Busy-wait loops without yield → watchdog resets | `OCFWebserver.cpp:182`, `OCFWifi.cpp:66` | **High** |
 | C4 | MQTT message flood: one publish per 10 ms tick | `OCFStateMachine.cpp:139-163` | **High** |
@@ -86,7 +86,15 @@ destroying and re-allocating the channel allocation. Also note `OCFLock::init()`
 declared and implemented but **never called** from `main.cpp` — the state-machine
 constructors do the attaching instead.
 
-### A2. MQTT CA/cert/key buffers leaked on every `configure()` (Critical)
+### A2. MQTT CA/cert/key buffers leaked on every `configure()` (Critical) — ✅ FIXED
+
+> **Fixed.** `MQTTConfiguration::ca/cert/key` are now `String`, so the previous contents
+> are released on reassignment and the ownership question disappears. `configure()` reads
+> them with the new `OCFFilesystem::readStringFile(path)` overload. Also removed the three
+> `-Wwrite-strings` warnings. **Residual risk:** `setCACert()` stores the pointer it is
+> given, so a reconfiguration frees a buffer the TLS layer may still reference if the MQTT
+> task happens to be mid-handshake. That window is part of **B3** (PubSubClient/`mqtt_secure`
+> touched from two tasks) and needs the lock from B3 to close properly.
 
 `OCFMQTT.cpp:29-40`:
 
@@ -121,7 +129,13 @@ struct MQTTConfiguration {
 
 and read into them once. That removes both the leak and the ownership ambiguity.
 
-### A3. Off-by-one heap overflow when reading cert files (Critical)
+### A3. Off-by-one heap overflow when reading cert files (Critical) — ✅ FIXED
+
+> **Fixed.** `readStringFile` now returns a `String` and sizes the read from `file.size()`
+> into an owned `char[size + 1]`, so there is no caller-supplied buffer to overrun. It also
+> refuses files larger than `OCF_MAX_FILE_READ_SIZE` (8 KB) and handles allocation failure,
+> since the file size is attacker-controlled through `/api/certs`. `writeStringFile`'s
+> `"%s\0"` format is replaced by a counted `file.write()`.
 
 `OCFFilesystem::readStringFile` (`OCFFilesystem.cpp:101-105`):
 
@@ -219,7 +233,10 @@ These are unauthenticated (see D1), so they are remote memory-corruption primiti
 `std::string`. Validate that the JSON value is a string first
 (`doc["name"].is<const char*>()`).
 
-### A7. Leaked file handles and unflushed writes (High)
+### A7. Leaked file handles and unflushed writes (High) — ✅ FIXED
+
+> **Fixed** alongside A2/A3: `getFileSize` now closes the file and returns `file.size()`
+> rather than `available()`, and both `writeJsonFile` overloads close before returning.
 
 * `OCFFilesystem::getFileSize` (`:80-90`) **never closes the file** and returns
   `file.available()` rather than `file.size()`. Called three times per `configure()`;
@@ -476,7 +493,10 @@ clients and wastes a buffer.
 
 **Fix:** `return` after each `server.send()`, or restructure so there is exactly one send.
 
-### C8. String comparison via pointer equality (Medium)
+### C8. String comparison via pointer equality (Medium) — ✅ FIXED (with A2)
+
+> **Fixed.** `config.server[0] == '\0'` for the char array; the `config.ca` check became a
+> real value comparison for free when `ca` changed to `String`.
 
 `OCFMQTT.cpp:44` and `:48`:
 
@@ -645,8 +665,9 @@ write-only local in `OCFRFID::enable`, and the unused `file_read` variables.
 ## Suggested order of work
 
 1. **Stop the crashes and corruption:** ~~A5 (`end()` deref)~~ done, ~~A4 (`snprintf`)~~ done,
-   ~~A6 (bounded copies)~~ done, A3 (off-by-one), B1 (mutex in ISR).
-2. **Stop the leaks:** ~~A1 (LEDC channels)~~ done, A2 (cert buffers), A7 (file handles).
+   ~~A6 (bounded copies)~~ done, ~~A3 (off-by-one)~~ done, B1 (mutex in ISR).
+2. **Stop the leaks:** ~~A1 (LEDC channels)~~ done, ~~A2 (cert buffers)~~ done,
+   ~~A7 (file handles)~~ done.
 3. **Make the state machine actually work:** C2 (braces), C3 (millis underflow), C4 (MQTT
    flood), C1.
 4. **Rework the ISR path** to queue-based handoff with `IRAM_ATTR` (B2/B3), then consider

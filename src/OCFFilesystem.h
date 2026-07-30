@@ -12,7 +12,7 @@ private:
 
 public:
     static bool readJsonFile(const char *path, StaticJsonDocument<OCF_MAX_JSON_SIZE> &outRef);
-    static int readStringFile(const char *path, char *output, size_t max_size);
+    static String readStringFile(const char *path);
     static int getFileSize(const char *path);
     static bool writeStringFile(const char *path, const char *data);
     static bool writeJsonFile(const char *path, DynamicJsonDocument document);

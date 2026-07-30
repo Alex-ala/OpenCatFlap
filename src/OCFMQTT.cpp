@@ -27,26 +27,17 @@ bool OCFMQTT::configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
     if(doc["user"].is<const char*>()) copyString(config.user, sizeof(config.user), doc["user"].as<const char*>());
     if(doc["password"].is<const char*>()) copyString(config.password, sizeof(config.password), doc["password"].as<const char*>());
     if(doc.containsKey("ssl")) config.ssl = doc["ssl"].as<bool>();
-    int size = OCFFilesystem::getFileSize(OCF_MQTT_CA_PATH);
-    char* tmp = (char*)malloc(sizeof(char)*size);
-    OCFFilesystem::readStringFile(OCF_MQTT_CA_PATH, tmp, size);
-    config.ca = tmp;
-    size = OCFFilesystem::getFileSize(OCF_MQTT_CERT_PATH);
-    char* tmp2 = (char*)malloc(sizeof(char)*size);
-    OCFFilesystem::readStringFile(OCF_MQTT_CERT_PATH, tmp2, size);
-    config.cert = tmp2;
-    size = OCFFilesystem::getFileSize(OCF_MQTT_KEY_PATH);
-    char* tmp3 = (char*)malloc(sizeof(char)*size);
-    OCFFilesystem::readStringFile(OCF_MQTT_KEY_PATH, tmp3, size);
-    config.key = tmp3;
+    config.ca = OCFFilesystem::readStringFile(OCF_MQTT_CA_PATH);
+    config.cert = OCFFilesystem::readStringFile(OCF_MQTT_CERT_PATH);
+    config.key = OCFFilesystem::readStringFile(OCF_MQTT_KEY_PATH);
     sleep(1);
     doc.clear();
     saveConfiguration();
-    if (config.server == "" || config.port == 0){
+    if (config.server[0] == '\0' || config.port == 0){
         configured = false;
         return false;
     }
-    if (config.ssl && config.ca == ""){
+    if (config.ssl && config.ca.isEmpty()){
         configured = false;
         return false;
     }
@@ -74,9 +65,9 @@ bool OCFMQTT::connectMQTT(){
     mqttclient.setServer(config.server, config.port);
     if (config.ssl) {
         log_d("Using MQTT with certificates...");
-        mqtt_secure.setCACert(config.ca);
-        mqtt_secure.setCertificate(config.cert);
-        mqtt_secure.setPrivateKey(config.key);
+        mqtt_secure.setCACert(config.ca.c_str());
+        mqtt_secure.setCertificate(config.cert.c_str());
+        mqtt_secure.setPrivateKey(config.key.c_str());
         const char* protos[] = {"mqtt", NULL};
         mqtt_secure.setAlpnProtocols(protos);
         mqttclient.setClient(mqtt_secure);

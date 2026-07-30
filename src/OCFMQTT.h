@@ -11,9 +11,9 @@ struct MQTTConfiguration {
     int port = 0;
     char user[20];
     char password [64];
-    char* ca = "";
-    char* cert = "";
-    char* key = "";
+    String ca;
+    String cert;
+    String key;
     char name[20];
     bool ssl = false;
     bool logActivity = true;

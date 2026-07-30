@@ -1,4 +1,5 @@
 #include <OCFFilesystem.h>
+#include <memory>
 
 bool mounted = false;
 
@@ -47,7 +48,9 @@ bool OCFFilesystem::writeJsonFile(const char *path, DynamicJsonDocument document
         log_d("Failed to open %s", path);
         return false;
     }
-    if (serializeJson(document, file) > 0)
+    size_t written = serializeJson(document, file);
+    file.close();
+    if (written > 0)
     {
         log_d("Successfully wrote to %s", path);
         return true;
@@ -68,7 +71,9 @@ bool OCFFilesystem::writeJsonFile(const char *path, StaticJsonDocument<OCF_MAX_J
         log_d("Failed to open %s", path);
         return false;
     }
-    if (serializeJson(document, file) > 0)
+    size_t written = serializeJson(document, file);
+    file.close();
+    if (written > 0)
     {
         log_d("Successfully wrote to %s", path);
         return true;
@@ -86,23 +91,38 @@ int OCFFilesystem::getFileSize(const char *path)
         log_d("Failed to open %s", path);
         return 0;
     }
-    return file.available();
+    int size = file.size();
+    file.close();
+    return size;
 }
 
-int OCFFilesystem::readStringFile(const char *path, char *output, size_t max_size)
+String OCFFilesystem::readStringFile(const char *path)
 {
     fs::FS &fs = SPIFFS;
     File file = fs.open(path, FILE_READ);
     if (!file || file.isDirectory())
     {
         log_d("Failed to open %s", path);
-        return 0;
+        return String();
     }
-    size_t bytesRead = 0;
-    bytesRead = file.readBytesUntil('\0', output, max_size);
-    output[bytesRead] = '\0';
+    size_t size = file.size();
+    if (size > OCF_MAX_FILE_READ_SIZE)
+    {
+        log_e("%s is %u bytes, refusing to read more than %u", path, (unsigned)size, (unsigned)OCF_MAX_FILE_READ_SIZE);
+        file.close();
+        return String();
+    }
+    std::unique_ptr<char[]> buffer(new (std::nothrow) char[size + 1]);
+    if (!buffer)
+    {
+        log_e("Out of memory reading %s (%u bytes)", path, (unsigned)size);
+        file.close();
+        return String();
+    }
+    size_t bytesRead = file.read((uint8_t *)buffer.get(), size);
     file.close();
-    return bytesRead;
+    buffer[bytesRead] = '\0';
+    return String(buffer.get());
 }
 
 bool OCFFilesystem::writeStringFile(const char *path, const char *data)
@@ -117,7 +137,13 @@ bool OCFFilesystem::writeStringFile(const char *path, const char *data)
         log_d("Failed to open %s", path);
         return false;
     }
-    file.printf("%s\0", data);
+    size_t len = strlen(data);
+    size_t written = file.write((const uint8_t *)data, len);
     file.close();
+    if (written != len)
+    {
+        log_d("Wrote only %u of %u bytes to %s", (unsigned)written, (unsigned)len, path);
+        return false;
+    }
     return true;
 }
