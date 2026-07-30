@@ -56,9 +56,13 @@ void OCFWebserver::handle_debug(){
     int dir = server.arg("dir").toInt();
     int val = server.arg("val").toInt();
     if (dir == 1){
+        val = constrain(val, min(OCF_SERVO_IN_LOCKED, OCF_SERVO_IN_UNLOCKED),
+                             max(OCF_SERVO_IN_LOCKED, OCF_SERVO_IN_UNLOCKED));
         OCFLock::enableServo(OCFDirection::IN);
         OCFLock::moveServoIn(val);
     }else{
+        val = constrain(val, min(OCF_SERVO_OUT_UNLOCKED, OCF_SERVO_OUT_LOCKED),
+                             max(OCF_SERVO_OUT_UNLOCKED, OCF_SERVO_OUT_LOCKED));
         OCFLock::enableServo(OCFDirection::OUT);
         OCFLock::moveServoOut(val);
     }

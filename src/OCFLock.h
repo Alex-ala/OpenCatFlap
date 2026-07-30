@@ -12,16 +12,17 @@ private:
     inline static bool lockedOut;
     inline static bool armedIn;
     inline static bool armedOut;
+    inline static bool initialized {false};
 
     inline static Servo servoIn;
     inline static Servo servoOut;
 
-    
+    // Stop driving a servo without releasing its LEDC channel.
+    static void park(OCFDirection direction);
 
 public:
     static void moveServoIn(int angle);
     static void moveServoOut(int angle);
-    static const char *toString;
     static void enableServo(OCFDirection direction);
     static void disableServo(OCFDirection direction);
     static void lock(OCFDirection direction);

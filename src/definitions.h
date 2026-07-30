@@ -1,11 +1,16 @@
 #define OCF_MAX_JSON_SIZE 1500
 
 #define OCF_SERVO_IN_PIN D10
+#define OCF_SERVO_IN_CHANNEL 0
 #define OCF_SERVO_IN_LOCKED 35
 #define OCF_SERVO_IN_UNLOCKED 64
 #define OCF_SERVO_OUT_PIN A4
+#define OCF_SERVO_OUT_CHANNEL 1
 #define OCF_SERVO_OUT_LOCKED 65
 #define OCF_SERVO_OUT_UNLOCKED 30
+
+// Time a DSM44 needs to reach the target angle before we may cut the pulse train.
+#define OCF_SERVO_TRAVEL_MS 300
 
 // TODO: With the new board, PIR is going LOW when motion detected. Also HIGH isnt high enough for digitalRead
 #define OCF_MOTION_INSIDE_PIN D5

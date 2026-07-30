@@ -6,9 +6,7 @@
 // TODO: Enable WIFI & MQTT to debug with powersupply
 OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
 {
-    OCFLock::enableServo(direction);
-    sleep(1);
-    OCFLock::disableServo(direction);
+    // Servos are attached and parked in the locked position by OCFLock::init().
     servoAttached = false;
     lastMotion = 0;
     lastRFID = 0;

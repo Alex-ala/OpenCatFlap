@@ -2,6 +2,7 @@
 #include <Arduino.h>
 
 void OCFFlapControl::init(){
+    OCFLock::init(); // claims both LEDC channels once, parks both servos locked
     OCFState::loadConfig();
     OCFState::loadCats();
     stateMachineOutside = new OCFStateMachine(OCFDirection::OUT);
