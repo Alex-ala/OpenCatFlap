@@ -159,7 +159,7 @@ void OCFWebserver::handle_api_post(){
         unsigned long long id = doc["rfid"].as<unsigned long long>();
         std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
         OCFCat cat = (it != OCFState::cats.end()) ? it->second : OCFCat();
-        strcpy(cat.name, doc["name"]);
+        copyString(cat.name, sizeof(cat.name), doc["name"].as<const char*>());
         cat.rfid = id;
         if (doc.containsKey("allowed_in")) cat.allow_in = doc["allowed_in"].as<bool>();
         if (doc.containsKey("allowed_out")) cat.allow_out = doc["allowed_out"].as<bool>();

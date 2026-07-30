@@ -38,7 +38,7 @@ void OCFState::loadCats(){
         char out[500];
         serializeJson(elem,out);
         log_d("elem: %s", out );
-        strcpy(cat.name, elem["name"]);
+        copyString(cat.name, sizeof(cat.name), elem["name"].as<const char*>());
         if (elem.containsKey("allowed_in")) cat.allow_in = elem["allowed_in"].as<bool>();
         if (elem.containsKey("allowed_out")) cat.allow_out = elem["allowed_out"].as<bool>();
         if (elem.containsKey("last_seen")) {

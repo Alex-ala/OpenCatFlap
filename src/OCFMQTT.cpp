@@ -1,5 +1,6 @@
 #include <OCFMQTT.h>
 #include <OCFWifi.h>
+#include <OCFHelper.h>
 
 bool OCFMQTT::connected = false;
 bool OCFMQTT::configured = false;
@@ -19,12 +20,12 @@ void OCFMQTT::init() {
 }
 
 bool OCFMQTT::configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
-    if(doc.containsKey("name")) strcpy(config.name, doc["name"].as<const char*>());
+    if(doc["name"].is<const char*>()) copyString(config.name, sizeof(config.name), doc["name"].as<const char*>());
     if(doc.containsKey("logActivity")) config.logActivity = doc["logActivity"].as<bool>();
-    if(doc.containsKey("server")) strcpy(config.server, doc["server"].as<const char*>());
+    if(doc["server"].is<const char*>()) copyString(config.server, sizeof(config.server), doc["server"].as<const char*>());
     if(doc.containsKey("port")) config.port = doc["port"].as<int>();
-    if(doc.containsKey("user")) strcpy(config.user, doc["user"].as<const char*>());
-    if(doc.containsKey("password")) strcpy(config.password, doc["password"].as<const char*>());
+    if(doc["user"].is<const char*>()) copyString(config.user, sizeof(config.user), doc["user"].as<const char*>());
+    if(doc["password"].is<const char*>()) copyString(config.password, sizeof(config.password), doc["password"].as<const char*>());
     if(doc.containsKey("ssl")) config.ssl = doc["ssl"].as<bool>();
     int size = OCFFilesystem::getFileSize(OCF_MQTT_CA_PATH);
     char* tmp = (char*)malloc(sizeof(char)*size);

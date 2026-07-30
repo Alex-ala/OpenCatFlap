@@ -16,7 +16,7 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | A3 | Heap overflow (off-by-one) writing the NUL terminator | `OCFFilesystem.cpp:102` + `OCFMQTT.cpp:30` | **Critical** |
 | A4 | `sprintf` into `char[30]` overflows the stack frame | `OCFStateMachine.cpp:144,153` | **Critical** — ✅ fixed |
 | A5 | Dereferencing `std::map::end()` on unknown RFID | `OCFStateMachine.cpp:142`, `OCFWebserver.cpp:158` | **Critical** — ✅ fixed |
-| A6 | Unbounded `strcpy` from network JSON into fixed buffers | `OCFMQTT.cpp:22-27`, `OCFWebserver.cpp:163` | **Critical** |
+| A6 | Unbounded `strcpy` from network JSON into fixed buffers | `OCFMQTT.cpp:22-27`, `OCFWebserver.cpp:163` | **Critical** — ✅ fixed |
 | B1 | `std::mutex` locked inside an ISR | `OCFRFID.cpp:133` | **Critical** |
 | B2 | ISRs not in IRAM; call `Serial.printf`, `log_d`, `attachInterrupt` | `OCFRFID.cpp` | **Critical** |
 | C1 | `unlock(BOTH)` locks both directions | `OCFLock.cpp:91-95` | **High** |
@@ -199,7 +199,12 @@ auto it = OCFState::cats.find(id);
 if (it == OCFState::cats.end()) { /* unknown */ }
 ```
 
-### A6. Unbounded `strcpy` from attacker-controlled JSON (Critical)
+### A6. Unbounded `strcpy` from attacker-controlled JSON (Critical) — ✅ FIXED
+
+> **Fixed.** Added `copyString(dest, sizeof(dest), src)` in `OCFHelper` — truncates instead
+> of overflowing, always NUL terminates, treats null as empty — and routed all three sites
+> through it. The MQTT sites now gate on `.is<const char*>()` rather than `containsKey()`,
+> so a non-string value no longer reaches the copy at all.
 
 * `OCFMQTT.cpp:22-27` — `strcpy` into `config.name[20]`, `server[20]`, `user[20]`,
   `password[64]` straight from the POST body. A 200-char server name overwrites adjacent
@@ -640,7 +645,7 @@ write-only local in `OCFRFID::enable`, and the unused `file_read` variables.
 ## Suggested order of work
 
 1. **Stop the crashes and corruption:** ~~A5 (`end()` deref)~~ done, ~~A4 (`snprintf`)~~ done,
-   A6 (`strlcpy`), A3 (off-by-one), B1 (mutex in ISR).
+   ~~A6 (bounded copies)~~ done, A3 (off-by-one), B1 (mutex in ISR).
 2. **Stop the leaks:** ~~A1 (LEDC channels)~~ done, A2 (cert buffers), A7 (file handles).
 3. **Make the state machine actually work:** C2 (braces), C3 (millis underflow), C4 (MQTT
    flood), C1.
