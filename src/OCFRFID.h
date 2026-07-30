@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <driver/pcnt.h>
 
 
 #define COUNTRY_BITS_COUNT 10
@@ -31,18 +32,16 @@ class OCFRFID {
         static OCFRFID* volatile active_instance;
         static bool outside_enabled;
         static bool inside_enabled;
-        static unsigned int switch_counter;
-        static volatile bool switch_requested;
+        static uint32_t last_switch_ms;
         static QueueHandle_t tag_queue;
-        static void on_clk();
         static void on_dmod();
         static void activate(OCFDirection direction);
         static void deactivate(OCFDirection direction);
 
 
-        void onInterruptClk();
         void onInterruptDmod();
-        void decodeEdge(BaseType_t* higher_woken);
+        void decodeEdge(int16_t clk_count, BaseType_t* higher_woken);
+        void setupCounter();
         void printBitstring();
         void enable();
         void disable();
@@ -53,8 +52,7 @@ class OCFRFID {
         int pin_power;
         int pin_dmod;
         int pin_clk;
-
-        volatile unsigned int clk_counter;
+        pcnt_unit_t pcnt_unit;
         OFC_RFID_STATE state;
         bool data[128];
         int data_index;

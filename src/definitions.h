@@ -34,6 +34,12 @@
 #define OCF_RFID_INSIDE_EN A2 // LOW to enable
 
 #define OCF_RFID_BIT_CYCLE_THRESHOLD 24
+// Clock edges are counted by PCNT. Filter is in APB (80 MHz) cycles: 100 = 1.25us, which
+// rejects glitches while passing the 3.73us half period of the 134 kHz carrier.
+#define OCF_RFID_PCNT_FILTER 100
+#define OCF_RFID_PCNT_LIMIT 30000
+// Dwell time on one antenna before switching, when both readers are enabled.
+#define OCF_RFID_SWITCH_MS 1000
 
 #define OCF_DEBUG_PIN D20
 

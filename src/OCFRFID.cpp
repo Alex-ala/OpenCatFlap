@@ -7,8 +7,7 @@ OCFRFID *OCFRFID::inside = new OCFRFID();
 OCFRFID *volatile OCFRFID::active_instance = nullptr;
 bool OCFRFID::inside_enabled = false;
 bool OCFRFID::outside_enabled = false;
-unsigned int OCFRFID::switch_counter = 0;
-volatile bool OCFRFID::switch_requested = false;
+uint32_t OCFRFID::last_switch_ms = 0;
 QueueHandle_t OCFRFID::tag_queue = nullptr;
 
 struct RfidRead {
@@ -17,17 +16,6 @@ struct RfidRead {
 };
 
 static portMUX_TYPE rfid_mux = portMUX_INITIALIZER_UNLOCKED;
-
-void OCFRFID::on_clk() {
-    if (active_instance) active_instance->onInterruptClk();
-    if (inside_enabled && outside_enabled) {
-        switch_counter++;
-        if (switch_counter >= 134000) {
-            switch_counter = 0;
-            switch_requested = true;
-        }
-    }
-}
 
 void OCFRFID::on_dmod() {
     if (active_instance) active_instance->onInterruptDmod();
@@ -39,29 +27,58 @@ void OCFRFID::init(OCFStateMachine* machine_outside, OCFStateMachine* machine_in
     outside->pin_power = OCF_RFID_OUTSIDE_EN;
     outside->pin_dmod = OCF_RFID_OUTSIDE_DMOD;
     outside->pin_clk = OCF_RFID_OUTSIDE_CLK;
+    outside->pcnt_unit = PCNT_UNIT_0;
     pinMode(outside->pin_power, OUTPUT);
     digitalWrite(outside->pin_power, HIGH); // Disable initially
+    outside->setupCounter();
     inside->machine = machine_inside;
     inside->direction = OCFDirection::IN;
     inside->pin_power = OCF_RFID_INSIDE_EN;
     inside->pin_dmod = OCF_RFID_INSIDE_DMOD;
     inside->pin_clk = OCF_RFID_INSIDE_CLK;
+    inside->pcnt_unit = PCNT_UNIT_1;
     pinMode(inside->pin_power, OUTPUT);
     digitalWrite(inside->pin_power, HIGH); // Disable initially
+    inside->setupCounter();
     inside_enabled = false;
     outside_enabled = false;
-    switch_counter = 0;
-    switch_requested = false;
+    last_switch_ms = millis();
     if (tag_queue == nullptr) tag_queue = xQueueCreate(8, sizeof(RfidRead));
     log_d("RFID initialized");
 }
 
+void OCFRFID::setupCounter() {
+    int gpio = digitalPinToGPIONumber(pin_clk);
+    if (gpio < 0) {
+        log_e("Cannot resolve GPIO for clock pin %d", pin_clk);
+        return;
+    }
+    pcnt_config_t cfg = {};
+    cfg.pulse_gpio_num = gpio;
+    cfg.ctrl_gpio_num = PCNT_PIN_NOT_USED;
+    cfg.lctrl_mode = PCNT_MODE_KEEP;
+    cfg.hctrl_mode = PCNT_MODE_KEEP;
+    cfg.pos_mode = PCNT_COUNT_INC;
+    cfg.neg_mode = PCNT_COUNT_DIS;
+    cfg.counter_h_lim = OCF_RFID_PCNT_LIMIT;
+    cfg.counter_l_lim = 0;
+    cfg.unit = pcnt_unit;
+    cfg.channel = PCNT_CHANNEL_0;
+    esp_err_t err = pcnt_unit_config(&cfg);
+    if (err != ESP_OK) {
+        log_e("PCNT unit %d config failed on GPIO %d: %s", pcnt_unit, gpio, esp_err_to_name(err));
+        return;
+    }
+    pcnt_set_filter_value(pcnt_unit, OCF_RFID_PCNT_FILTER);
+    pcnt_filter_enable(pcnt_unit);
+    pcnt_counter_pause(pcnt_unit);
+    pcnt_counter_clear(pcnt_unit);
+    log_d("PCNT unit %d counting %s clock on GPIO %d", pcnt_unit, writeDirection(direction), gpio);
+}
+
 void OCFRFID::process() {
-    if (switch_requested) {
-        switch_requested = false;
-        if (inside_enabled && outside_enabled) {
-            activate(active_instance == inside ? OCFDirection::OUT : OCFDirection::IN);
-        }
+    if (inside_enabled && outside_enabled && (millis() - last_switch_ms >= OCF_RFID_SWITCH_MS)) {
+        activate(active_instance == inside ? OCFDirection::OUT : OCFDirection::IN);
     }
     if (tag_queue == nullptr) return;
     RfidRead read;
@@ -113,6 +130,7 @@ void OCFRFID::activate(OCFDirection direction) {
         outside->enable();
         log_d("Enable RFID outside");
     }
+    last_switch_ms = millis();
 }
 void OCFRFID::deactivate(OCFDirection direction) {
     if (direction == OCFDirection::IN) {
@@ -124,7 +142,6 @@ void OCFRFID::deactivate(OCFDirection direction) {
 
 void OCFRFID::enable() {
     portENTER_CRITICAL(&rfid_mux);
-    clk_counter = 0;
     data_index = 0;
     for (int i = 0; i < 128; i++){
         data[i] = 0;
@@ -135,34 +152,33 @@ void OCFRFID::enable() {
     active_instance = this;
     portEXIT_CRITICAL(&rfid_mux);
     digitalWrite(pin_power, LOW);
-    attachInterrupt(pin_clk, OCFRFID::on_clk, RISING);
+    pcnt_counter_clear(pcnt_unit);
+    pcnt_counter_resume(pcnt_unit);
     attachInterrupt(pin_dmod, OCFRFID::on_dmod, CHANGE);
 }
 
 void OCFRFID::disable() {
-    detachInterrupt(pin_clk);
     detachInterrupt(pin_dmod);
+    pcnt_counter_pause(pcnt_unit);
     digitalWrite(pin_power, HIGH);
 }
 
-void OCFRFID::onInterruptClk() {
-    clk_counter++;
-}
-
 void OCFRFID::onInterruptDmod() {
+    int16_t clk_count = 0;
+    pcnt_get_counter_value(pcnt_unit, &clk_count);
+    pcnt_counter_clear(pcnt_unit);
     BaseType_t higher_woken = pdFALSE;
     portENTER_CRITICAL_ISR(&rfid_mux);
-    decodeEdge(&higher_woken);
+    decodeEdge(clk_count, &higher_woken);
     portEXIT_CRITICAL_ISR(&rfid_mux);
     if (higher_woken) portYIELD_FROM_ISR();
 }
 
-void OCFRFID::decodeEdge(BaseType_t* higher_woken) {
+void OCFRFID::decodeEdge(int16_t clk_count, BaseType_t* higher_woken) {
     if (state == DISABLE) {
         return;
     }
-    bool short_pulse = clk_counter < 24;
-    clk_counter = 0;
+    bool short_pulse = clk_count < OCF_RFID_BIT_CYCLE_THRESHOLD;
     if (short_pulse && !expect_short) {
         expect_short = true;
         return;

@@ -395,7 +395,21 @@ buffer and drops the connection.
 **Fix:** use `vTaskDelay(pdMS_TO_TICKS(...))` with sensible values (MQTT `loop()` every
 100 ms), and delete the `sleep(20)` in `setup()`.
 
-### B7. 134 kHz GPIO interrupt as a clock counter (Medium, design)
+### B7. 134 kHz GPIO interrupt as a clock counter (Medium, design) — ✅ FIXED
+
+> **Fixed.** Each reader owns a PCNT unit (`PCNT_UNIT_0` outside, `PCNT_UNIT_1` inside)
+> bound to its clock GPIO in `OCFRFID::setupCounter()`. The DMOD handler reads and clears
+> the counter instead of consuming a software tally, and the clock interrupt is gone
+> entirely — interrupt load drops from ~134,000/s to ~8,400/s (DMOD edges only), and a
+> clock edge can no longer be lost to preemption, cache stalls or a long ISR.
+>
+> `pcnt_config_t.pulse_gpio_num` needs a **real GPIO number**, but this board defines
+> `BOARD_HAS_PIN_REMAP` — `D3` is GPIO 6 and `D8` is GPIO 17. `setupCounter()` therefore
+> calls `digitalPinToGPIONumber(pin_clk)`; passing the Arduino pin straight through would
+> have silently counted the wrong pad.
+>
+> The antenna round-robin no longer rides on the clock tally (it counted to 134000 ≈ 1 s);
+> `process()` now switches on `millis() - last_switch_ms >= OCF_RFID_SWITCH_MS`.
 
 `OCFRFID::enable` attaches a RISING interrupt to the EM4095 clock output — ~134,000
 interrupts per second, each doing an indirect call plus a counter increment
