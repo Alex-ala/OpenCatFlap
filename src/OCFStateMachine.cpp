@@ -137,19 +137,20 @@ OCFMachineStates OCFStateMachine::getState(){
 bool OCFStateMachine::checkTag(unsigned long long id){
     // TODO: prevent execution and state changes so often. Keep lastRFID intact for transition/update logic
     std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
-    if (it->first != id) {
+    if (it == OCFState::cats.end()) {
         log_d("Unknown rfid read: %llu", id);
-        char message[30];
-        sprintf(message, "Unknown cat looks %s: %llu", writeDirection(direction), id);
+        // "Unknown cat looks " + direction + ": " + up to 20 digits of a 64 bit id
+        char message[64];
+        snprintf(message, sizeof(message), "Unknown cat looks %s: %llu", writeDirection(direction), id);
         OCFMQTT::sendMessage("activity", message);
         return false;
     }
-    OCFCat cat = it->second;
+    OCFCat& cat = it->second;
     cat.last_seen = OCFWifi::getEpochTime();
-    OCFState::cats.insert_or_assign(cat.rfid, cat);
     log_d("%s detected.", cat.name);
-    char message[30];
-    sprintf(message, "Cat looks %s: %s", writeDirection(direction), cat.name);
+    // "Cat looks " + direction + ": " + up to 29 characters of name
+    char message[64];
+    snprintf(message, sizeof(message), "Cat looks %s: %s", writeDirection(direction), cat.name);
     OCFMQTT::sendMessage("activity", message);
     if (direction == OCFDirection::IN){
         log_d("Cat entering has state: %d (cat), %d (global)",cat.allow_in, OCFState::config.allow_in);

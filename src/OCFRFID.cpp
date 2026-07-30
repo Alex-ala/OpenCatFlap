@@ -112,8 +112,6 @@ void OCFRFID::enable() {
     active_instance = this;
     attachInterrupt(pin_clk, OCFRFID::on_clk, RISING);
     attachInterrupt(pin_dmod, OCFRFID::on_dmod, CHANGE);
-    char message[30];
-    sprintf(message, "RFID enabled %s", writeDirection(direction));
 }
 
 void OCFRFID::disable() {

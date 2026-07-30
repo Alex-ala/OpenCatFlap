@@ -14,8 +14,8 @@ Findings are grouped by severity. Each entry names the exact location and a conc
 | A1 | LEDC channel leak — servos stop working after ~8 lock cycles | `OCFLock.cpp` / ServoESP32 | **Critical** — ✅ fixed |
 | A2 | MQTT cert/key heap buffers leaked on every `configure()` | `OCFMQTT.cpp:29-40` | **Critical** |
 | A3 | Heap overflow (off-by-one) writing the NUL terminator | `OCFFilesystem.cpp:102` + `OCFMQTT.cpp:30` | **Critical** |
-| A4 | `sprintf` into `char[30]` overflows the stack frame | `OCFStateMachine.cpp:144,153` | **Critical** |
-| A5 | Dereferencing `std::map::end()` on unknown RFID | `OCFStateMachine.cpp:142`, `OCFWebserver.cpp:158` | **Critical** |
+| A4 | `sprintf` into `char[30]` overflows the stack frame | `OCFStateMachine.cpp:144,153` | **Critical** — ✅ fixed |
+| A5 | Dereferencing `std::map::end()` on unknown RFID | `OCFStateMachine.cpp:142`, `OCFWebserver.cpp:158` | **Critical** — ✅ fixed |
 | A6 | Unbounded `strcpy` from network JSON into fixed buffers | `OCFMQTT.cpp:22-27`, `OCFWebserver.cpp:163` | **Critical** |
 | B1 | `std::mutex` locked inside an ISR | `OCFRFID.cpp:133` | **Critical** |
 | B2 | ISRs not in IRAM; call `Serial.printf`, `log_d`, `attachInterrupt` | `OCFRFID.cpp` | **Critical** |
@@ -152,7 +152,11 @@ non-null 0-byte block, `readStringFile` returns early without writing anything, 
 `config.ca` then points at uninitialized memory that is handed straight to
 `mqtt_secure.setCACert()` (`OCFMQTT.cpp:76`). Check the return value.
 
-### A4. `sprintf` into `char[30]` overflows the stack (Critical)
+### A4. `sprintf` into `char[30]` overflows the stack (Critical) — ✅ FIXED
+
+> **Fixed.** Every `sprintf` in `src/` is now `snprintf` with `sizeof(buf)`, and the two
+> `checkTag()` buffers were grown to 64 bytes. The dead `sprintf` in `OCFRFID::enable()`
+> (built a message into a local that was never used, from ISR context) was deleted.
 
 `OCFStateMachine.cpp:144-146`:
 
@@ -172,7 +176,11 @@ up to 45 bytes). `OCFMQTT.cpp:95-96` is not overflowing today but has only 1 byt
 worst case (≥ 64 bytes here). Grep for `sprintf(` — every occurrence in this repo should
 be `snprintf`.
 
-### A5. Dereferencing `end()` on an unknown RFID (Critical, UB)
+### A5. Dereferencing `end()` on an unknown RFID (Critical, UB) — ✅ FIXED
+
+> **Fixed** in both places by comparing against `cats.end()`. `checkTag()` also now takes
+> a reference to the mapped value instead of copying it out and writing it back with
+> `insert_or_assign`.
 
 `OCFStateMachine.cpp:141-142`:
 
@@ -631,8 +639,8 @@ write-only local in `OCFRFID::enable`, and the unused `file_read` variables.
 
 ## Suggested order of work
 
-1. **Stop the crashes and corruption:** A5 (`end()` deref), A4/A6 (`snprintf`/`strlcpy`),
-   A3 (off-by-one), B1 (mutex in ISR).
+1. **Stop the crashes and corruption:** ~~A5 (`end()` deref)~~ done, ~~A4 (`snprintf`)~~ done,
+   A6 (`strlcpy`), A3 (off-by-one), B1 (mutex in ISR).
 2. **Stop the leaks:** ~~A1 (LEDC channels)~~ done, A2 (cert buffers), A7 (file handles).
 3. **Make the state machine actually work:** C2 (braces), C3 (millis underflow), C4 (MQTT
    flood), C1.

@@ -92,8 +92,8 @@ bool OCFMQTT::connectMQTT(){
     if (connected){
         log_d("Connected to MQTT at %s:%d", config.server, config.port);
         unsigned long ts = OCFWifi::getEpochTime();
-        char message[30];
-        sprintf(message, "%lu Connected to MQTT", ts);
+        char message[48];
+        snprintf(message, sizeof(message), "%lu Connected to MQTT", ts);
         sendMessage("startup", message);
     }else{
         log_d("Failed to connect to MQTT at %s:%d", config.server, config.port);
