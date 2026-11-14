@@ -23,9 +23,9 @@ void OCFRFID::on_dmod() {
     if (active_instance) active_instance->onInterruptDmod();
 }
 
-void OCFRFID::init(OCFStateMachine* machine_outside, OCFStateMachine* machine_inside) {
-    outside->machine = machine_outside;
-    outside->direction = OCFDirection::OUT;
+void OCFRFID::init(OCFStateMachine* machine_inward, OCFStateMachine* machine_outward) {
+    outside->machine = machine_inward;
+    outside->direction = OCFDirection::INWARD;
     outside->pin_power = OCF_RFID_OUTSIDE_EN;
     outside->pin_dmod = OCF_RFID_OUTSIDE_DMOD;
     outside->pin_clk = OCF_RFID_OUTSIDE_CLK;
@@ -33,8 +33,8 @@ void OCFRFID::init(OCFStateMachine* machine_outside, OCFStateMachine* machine_in
     pinMode(outside->pin_power, OUTPUT);
     digitalWrite(outside->pin_power, HIGH); // Disable initially
     outside->setupCounter();
-    inside->machine = machine_inside;
-    inside->direction = OCFDirection::IN;
+    inside->machine = machine_outward;
+    inside->direction = OCFDirection::OUTWARD;
     inside->pin_power = OCF_RFID_INSIDE_EN;
     inside->pin_dmod = OCF_RFID_INSIDE_DMOD;
     inside->pin_clk = OCF_RFID_INSIDE_CLK;
@@ -80,7 +80,7 @@ void OCFRFID::setupCounter() {
 
 void OCFRFID::process() {
     if (inside_enabled && outside_enabled && (millis() - last_switch_ms >= OCF_RFID_SWITCH_MS)) {
-        activate(active_instance == inside ? OCFDirection::OUT : OCFDirection::IN);
+        activate(active_instance == inside ? outside : inside);
     }
     uint32_t failures = crc_failures;
     if (failures != reported_crc_failures) {
@@ -90,61 +90,105 @@ void OCFRFID::process() {
     if (tag_queue == nullptr) return;
     RfidRead read;
     while (xQueueReceive(tag_queue, &read, 0) == pdTRUE) {
-        Serial.printf("RFID read: %llu\n", read.id);
-        OCFRFID *reader = (read.direction == OCFDirection::IN) ? inside : outside;
-        if (reader->machine) reader->machine->readRFID(read.id);
+        //Serial.printf("RFID read: %llu\n", read.id);
+        OCFRFID *reader = readerFor(read.direction);
+        if (reader && reader->machine) reader->machine->readRFID(read.id);
     }
+    OCFRFID *reader = active_instance;
+    if (reader && reader->powered) reader->updateFrequency();
+}
+
+void OCFRFID::harvest() {
+    int16_t count = 0;
+    pcnt_get_counter_value(pcnt_unit, &count);
+    total_edges += (count - last_count + OCF_RFID_PCNT_LIMIT) % OCF_RFID_PCNT_LIMIT;
+    last_count = count;
+}
+
+void OCFRFID::updateFrequency() {
+    uint32_t now_us = micros();
+    portENTER_CRITICAL(&rfid_mux);
+    harvest();
+    uint32_t edges = total_edges;
+    portEXIT_CRITICAL(&rfid_mux);
+    uint32_t now_ms = millis();
+    bool settling = now_ms - enabled_ms < OCF_RFID_SETTLE_MS;
+    bool gap = now_us - last_update_us > OCF_RFID_MAX_GAP_US;
+    last_update_us = now_us;
+    if (settling || gap) {
+        window_start_us = now_us;
+        window_start_edges = edges;
+        return;
+    }
+    uint32_t elapsed_us = now_us - window_start_us;
+    if (elapsed_us < OCF_RFID_FREQ_WINDOW_MS * 1000UL) return;
+    uint32_t hz = (uint64_t)(edges - window_start_edges) * 1000000ULL / elapsed_us;
+    portENTER_CRITICAL(&rfid_mux);
+    frequency_hz = hz;
+    measured_ms = now_ms;
+    portEXIT_CRITICAL(&rfid_mux);
+    window_start_us = now_us;
+    window_start_edges = edges;
+}
+
+OCFRFIDFrequency OCFRFID::frequency() {
+    portENTER_CRITICAL(&rfid_mux);
+    OCFRFIDFrequency result = { frequency_hz, frequency_hz ? millis() - measured_ms : 0 };
+    portEXIT_CRITICAL(&rfid_mux);
+    return result;
+}
+
+OCFRFIDFrequency OCFRFID::insideFrequency() {
+    return inside->frequency();
+}
+
+OCFRFIDFrequency OCFRFID::outsideFrequency() {
+    return outside->frequency();
+}
+
+OCFRFID* OCFRFID::readerFor(OCFDirection direction) {
+    if (direction == OCFDirection::INWARD) return outside;
+    if (direction == OCFDirection::OUTWARD) return inside;
+    return nullptr;
 }
 
 void OCFRFID::enable(OCFDirection direction) {
-    if (direction == OCFDirection::IN) {
-        inside_enabled = true;
-        if (!outside_enabled) {
-            activate(OCFDirection::IN);
-        }
-    } else if (direction == OCFDirection::OUT) {
+    if (direction == OCFDirection::INWARD) {
         outside_enabled = true;
         if (!inside_enabled) {
-            activate(OCFDirection::OUT);
+            activate(outside);
+        }
+    } else if (direction == OCFDirection::OUTWARD) {
+        inside_enabled = true;
+        if (!outside_enabled) {
+            activate(inside);
         }
     }
 }
 void OCFRFID::disable(OCFDirection direction) {
-    if (direction == OCFDirection::IN) {
-        inside_enabled = false;
-        if (outside_enabled && active_instance != outside) {
-            activate(OCFDirection::OUT);
-        }else{
-            deactivate(direction);
-        }
-    } else if (direction == OCFDirection::OUT) {
+    if (direction == OCFDirection::INWARD) {
         outside_enabled = false;
         if (inside_enabled && active_instance != inside) {
-            activate(OCFDirection::IN);
+            activate(inside);
         }else{
-            deactivate(direction);
+            outside->disable();
+        }
+    } else if (direction == OCFDirection::OUTWARD) {
+        inside_enabled = false;
+        if (outside_enabled && active_instance != outside) {
+            activate(outside);
+        }else{
+            inside->disable();
         }
     }
 }
 
-void OCFRFID::activate(OCFDirection direction) {
-    if (direction == OCFDirection::IN) {
-        outside->disable();
-        inside->enable();
-        log_d("Enable RFID inside");
-    } else if (direction == OCFDirection::OUT) {
-        inside->disable();
-        outside->enable();
-        log_d("Enable RFID outside");
-    }
+void OCFRFID::activate(OCFRFID* reader) {
+    OCFRFID* other = (reader == inside) ? outside : inside;
+    other->disable();
+    reader->enable();
+    log_d("Enable RFID %s", reader == inside ? "inside" : "outside");
     last_switch_ms = millis();
-}
-void OCFRFID::deactivate(OCFDirection direction) {
-    if (direction == OCFDirection::IN) {
-        inside->disable();
-    } else if (direction == OCFDirection::OUT) {
-        outside->disable();
-    }
 }
 
 void OCFRFID::enable() {
@@ -157,6 +201,10 @@ void OCFRFID::enable() {
     expect_short = false;
     zero_counter = 0;
     active_instance = this;
+    last_count = 0;
+    edge_mark = total_edges;
+    powered = true;
+    enabled_ms = millis();
     portEXIT_CRITICAL(&rfid_mux);
     digitalWrite(pin_power, LOW);
     pcnt_counter_clear(pcnt_unit);
@@ -168,15 +216,16 @@ void OCFRFID::disable() {
     detachInterrupt(pin_dmod);
     pcnt_counter_pause(pcnt_unit);
     digitalWrite(pin_power, HIGH);
+    powered = false;
 }
 
 void OCFRFID::onInterruptDmod() {
-    int16_t clk_count = 0;
-    pcnt_get_counter_value(pcnt_unit, &clk_count);
-    pcnt_counter_clear(pcnt_unit);
     BaseType_t higher_woken = pdFALSE;
     portENTER_CRITICAL_ISR(&rfid_mux);
-    decodeEdge(clk_count, &higher_woken);
+    harvest();
+    uint32_t interval = total_edges - edge_mark;
+    edge_mark = total_edges;
+    decodeEdge(interval > INT16_MAX ? INT16_MAX : (int16_t)interval, &higher_woken);
     portEXIT_CRITICAL_ISR(&rfid_mux);
     if (higher_woken) portYIELD_FROM_ISR();
 }

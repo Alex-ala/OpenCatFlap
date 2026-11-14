@@ -27,8 +27,9 @@ bool OCFWifi::configure(StaticJsonDocument<OCF_MAX_JSON_SIZE>& doc){
     if (config.netmask == "") config.netmask = "255.255.255.0";
     if (doc.containsKey("ntpServer") && doc["ntpServer"].as<String>() != ""){
         config.ntpServer = doc["ntpServer"].as<String>();  
-        log_d("Setting ntp server to %s...", config.ntpServer);
-    } 
+        log_d("Setting ntp server to %s...", config.ntpServer.c_str());
+    }
+    if (config.ntpServer == "") config.ntpServer = OCF_DEFAULT_NTP_SERVER;
     OCFFilesystem::writeJsonFile(WIFI_CONFIG_FILE, doc);
     doc.clear();
     configured = true;
@@ -40,23 +41,24 @@ void OCFWifi::setupAP() {
     log_d("Starting access point for setup...");
     WiFi.softAP("OpenCatFlap", NULL);
     IPAddress ip = WiFi.softAPIP();
-    log_d("Started access point with IP %s", ip.toString());
+    log_d("Started access point with IP %s", ip.toString().c_str());
 }
 
 bool OCFWifi::connectWifi(){
-    log_d("Connecting to wifi %s", config.ssid);
+    log_d("Connecting to wifi %s", config.ssid.c_str());
     WiFi.mode(WIFI_STA);
     if (config.ip != ""){
-        IPAddress ip = IPAddress().fromString(config.ip.c_str());
+        IPAddress ip;
         IPAddress gateway;
         IPAddress netmask;
-        if(config.gateway != "") gateway.fromString(config.gateway.c_str());
-        if(config.netmask != "") netmask.fromString(config.netmask.c_str());
-        if (!WiFi.config(ip, gateway, netmask)){
-            log_d("Failed to configure static ip/gw/mask (%s,%s,%s)",config.ip, config.gateway, config.netmask);
+        bool valid = ip.fromString(config.ip.c_str());
+        if(config.gateway != "") valid = valid && gateway.fromString(config.gateway.c_str());
+        if(config.netmask != "") valid = valid && netmask.fromString(config.netmask.c_str());
+        if (!valid || !WiFi.config(ip, gateway, netmask)){
+            log_d("Failed to configure static ip/gw/mask (%s,%s,%s)", config.ip.c_str(), config.gateway.c_str(), config.netmask.c_str());
             return false;
         }
-        log_d("Configured static ip/gw/mask(%s,%s,%s)",config.ip, config.gateway, config.netmask);
+        log_d("Configured static ip/gw/mask(%s,%s,%s)", config.ip.c_str(), config.gateway.c_str(), config.netmask.c_str());
     }
     WiFi.begin(config.ssid.c_str(), config.passphrase.c_str());
     unsigned long previousMillis;
@@ -66,14 +68,14 @@ bool OCFWifi::connectWifi(){
     while(WiFi.status() != WL_CONNECTED) {
         currentMillis = millis();
         if (currentMillis - previousMillis >= wait_interval) {
-        log_e("Failed to connect to wifi %s.", config.ssid);
+        log_e("Failed to connect to wifi %s.", config.ssid.c_str());
         return false;
         }
     }
-    log_d("Connected to wifi %s with IP %s and DNS %s", config.ssid, WiFi.localIP().toString(), WiFi.dnsIP().toString());
+    log_d("Connected to wifi %s with IP %s and DNS %s", config.ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.dnsIP().toString().c_str());
     timeClient.setPoolServerName(config.ntpServer.c_str());
     timeClient.update();
-    log_d("Set ntp server to %s", config.ntpServer);
+    log_d("Set ntp server to %s", config.ntpServer.c_str());
     timeClient.update();
     return true;
 }

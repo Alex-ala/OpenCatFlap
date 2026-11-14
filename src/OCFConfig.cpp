@@ -5,6 +5,7 @@
 #include <OCFFlapControl.h>
 
 void OCFState::loadConfig(){
+    Guard guard;
     StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
     bool loaded = OCFFilesystem::readJsonFile(FLAP_CONFIG_FILE, doc);
     if (!loaded){
@@ -19,6 +20,7 @@ void OCFState::loadConfig(){
 }
 
 void OCFState::saveConfig() {
+    Guard guard;
     DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
     doc["allowed_in"] = config.allow_in;
     doc["allowed_out"] = config.allow_out;
@@ -29,9 +31,11 @@ void OCFState::saveConfig() {
 void OCFState::loadCats(){
     StaticJsonDocument<OCF_MAX_JSON_SIZE> doc;
     bool loaded = OCFFilesystem::readJsonFile(CAT_CONFIG_FILE, doc);
-    if (!loaded || doc.size() == 0){
-        log_d("Failed to load cat config, defaulting to allow all");
+    if (!loaded){
+        log_d("Failed to load cat config, no cats known");
+        return;
     }
+    Guard guard;
     log_d("Loading cats...");
     for (JsonObject elem : doc.as<JsonArray>()){
         OCFCat cat = OCFCat();
@@ -42,12 +46,12 @@ void OCFState::loadCats(){
         if (elem.containsKey("allowed_in")) cat.allow_in = elem["allowed_in"].as<bool>();
         if (elem.containsKey("allowed_out")) cat.allow_out = elem["allowed_out"].as<bool>();
         if (elem.containsKey("last_seen")) {
-            cat.last_seen = doc["last_seen"].as<u_int64_t>();
+            cat.last_seen = elem["last_seen"].as<uint64_t>();
         } else {
             cat.last_seen = 0;
         }
         if (elem.containsKey("location")) {
-            cat.location = doc["location"].as<OCFDirection>();
+            cat.location = static_cast<OCFDirection>(elem["location"].as<int>());
         } else {
             cat.location = OCFDirection::NONE;
         }
@@ -58,6 +62,7 @@ void OCFState::loadCats(){
 }
 
 void OCFState::saveCats() {
+    Guard guard;
     DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
     JsonArray arr = doc.to<JsonArray>();
     for (const auto& m: cats){
@@ -74,19 +79,29 @@ void OCFState::saveCats() {
     doc.clear();
 }
 
+static void addFrequency(JsonObject obj, OCFRFIDFrequency frequency){
+    obj["hz"] = frequency.hz;
+    if (frequency.hz) obj["age_ms"] = frequency.age_ms;
+}
+
 void OCFState::getStateJSON(String& outStr){
+    Guard guard;
     DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
     doc["allow_out"] = config.allow_out;
     doc["allow_in"] = config.allow_in;
-    doc["outside_state"] = OCFFlapControl::getOutsideState();
-    doc["inside_state"] = OCFFlapControl::getInsideState();
+    doc["outward_state"] = OCFFlapControl::getOutwardState();
+    doc["inward_state"] = OCFFlapControl::getInwardState();
     doc["mem_free_heap"] = esp_get_free_heap_size();
     doc["time"] = OCFWifi::getEpochTime();
+    JsonObject rfid = doc["rfid"].to<JsonObject>();
+    addFrequency(rfid["inside"].to<JsonObject>(), OCFRFID::insideFrequency());
+    addFrequency(rfid["outside"].to<JsonObject>(), OCFRFID::outsideFrequency());
     serializeJsonPretty(doc, outStr);
     doc.clear();
 }
 
 void OCFState::getCatsJSON(String& outStr){
+    Guard guard;
     DynamicJsonDocument doc(OCF_MAX_JSON_SIZE);
     JsonArray arr = doc.to<JsonArray>();
     for (const auto& m: cats){

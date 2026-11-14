@@ -13,12 +13,13 @@ OCFStateMachine::OCFStateMachine(OCFDirection direction) : direction(direction)
     rfidTag = 0;
     lastRead = 0;
     rfidReading = false;
+    tagPending = false;
     directionName = writeDirection(direction);
-    if (direction == OCFDirection::IN)
+    if (direction == OCFDirection::INWARD)
     {
         pin_motion = OCF_MOTION_OUTSIDE_PIN;
     }
-    else if (direction == OCFDirection::OUT)
+    else if (direction == OCFDirection::OUTWARD)
     {
         pin_motion = OCF_MOTION_INSIDE_PIN;
     }
@@ -37,10 +38,21 @@ void OCFStateMachine::update()
         updateUnlocked();
 }
 
+bool OCFStateMachine::motionDetected()
+{
+    return digitalRead(pin_motion) == LOW;
+}
+
+bool OCFStateMachine::takePendingTag()
+{
+    bool pending = tagPending;
+    tagPending = false;
+    return pending;
+}
+
 void OCFStateMachine::updateIdle()
 {
-    bool motion = digitalRead(pin_motion) == LOW;
-    if (!motion)
+    if (!motionDetected())
         return;
     lastMotion = millis();
     transitionIdleToReading();
@@ -48,43 +60,37 @@ void OCFStateMachine::updateIdle()
 
 void OCFStateMachine::updateReading()
 {
-    bool motion = digitalRead(pin_motion) == LOW;
-    if (motion) {
+    if (motionDetected()) {
         lastMotion = millis();
     }
-    // Return to Idle after 10s of no motion
-    if (lastMotion <= millis() - 10000) {
+    if (millis() - lastMotion >= OCF_MOTION_TIMEOUT_MS) {
         transitionReadingToIdle();
-    }else if (lastRFID != 0 && lastRFID >= millis() - 2000) {
-        if (checkTag(rfidTag)) {
-            transitionReadingToUnlocked();
-        }
+        return;
+    }
+    if (takePendingTag() && checkTag(rfidTag)) {
+        transitionReadingToUnlocked();
     }
 }
 
 void OCFStateMachine::updateUnlocked()
 {
-    bool motion = digitalRead(pin_motion) == LOW;
-    if (motion) {
+    if (motionDetected()) {
         lastMotion = millis();
     }
-    if (lastMotion <= millis() - 10000) {
+    if (millis() - lastMotion >= OCF_MOTION_TIMEOUT_MS) {
         log_d("%s Lock due to inactivity", directionName);
-
         transitionUnlockedToReading();
         return;
     }
-    if (lastRFID != 0 && lastRFID >= millis() - 2000) {
-        if (!checkTag(rfidTag)) {
-            log_d("%s Lock due to invalid tag", directionName);
-            transitionUnlockedToReading();
-            return;
-        }
+    if (takePendingTag() && !checkTag(rfidTag)) {
+        log_d("%s Lock due to invalid tag", directionName);
+        transitionUnlockedToReading();
+        return;
     }
-    // Return to Reading after 5s of no valid RFID
-    if (lastRFID == 0 && lastRFID <= millis() - 5000)
+    if (millis() - lastRFID >= OCF_UNLOCK_TAG_TIMEOUT_MS) {
         log_d("%s Lock due to no tag", directionName);
         transitionUnlockedToReading();
+    }
 }
 
 void OCFStateMachine::transitionIdleToReading()
@@ -93,6 +99,7 @@ void OCFStateMachine::transitionIdleToReading()
     servoAttached = true;
     rfidReading = false;
     lastRFID = 0;
+    tagPending = false;
     OCFRFID::enable(direction);
     currentState = OCFMachineStates::READING;
     log_d("%s: Reading", directionName);
@@ -108,6 +115,8 @@ void OCFStateMachine::transitionReadingToIdle()
     lastRFID = 0;
     lastRead = 0;
     rfidTag = 0;
+    tagPending = false;
+    reportedTags.clear();
     OCFRFID::disable(direction);
     currentState = OCFMachineStates::IDLE;
     log_d("%s: Idle", directionName);
@@ -135,34 +144,42 @@ OCFMachineStates OCFStateMachine::getState(){
 }
 
 bool OCFStateMachine::checkTag(unsigned long long id){
-    // TODO: prevent execution and state changes so often. Keep lastRFID intact for transition/update logic
-    std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
-    if (it == OCFState::cats.end()) {
-        log_d("Unknown rfid read: %llu", id);
-        // "Unknown cat looks " + direction + ": " + up to 20 digits of a 64 bit id
+    bool known = false;
+    bool allowed = false;
+    char name[sizeof(OCFCat::name)] = "";
+    {
+        OCFState::Guard guard;
+        std::map<unsigned long long, OCFCat>::iterator it = OCFState::cats.find(id);
+        if (it != OCFState::cats.end()) {
+            OCFCat& cat = it->second;
+            known = true;
+            cat.last_seen = OCFWifi::getEpochTime();
+            copyString(name, sizeof(name), cat.name);
+            if (direction == OCFDirection::INWARD) {
+                allowed = cat.allow_in && OCFState::config.allow_in;
+            } else {
+                allowed = cat.allow_out && OCFState::config.allow_out;
+            }
+        }
+    }
+    bool first_sighting = std::find(reportedTags.begin(), reportedTags.end(), id) == reportedTags.end();
+    if (first_sighting) {
+        reportedTags.push_back(id);
         char message[64];
-        snprintf(message, sizeof(message), "Unknown cat looks %s: %llu", writeDirection(direction), id);
+        if (known) {
+            log_d("%s detected, allowed %s: %d", name, directionName, allowed);
+            snprintf(message, sizeof(message), "Cat looks %s: %s", directionName, name);
+        } else {
+            log_d("Unknown rfid read: %llu", id);
+            snprintf(message, sizeof(message), "Unknown cat looks %s: %llu", directionName, id);
+        }
         OCFMQTT::sendMessage("activity", message);
-        return false;
     }
-    OCFCat& cat = it->second;
-    cat.last_seen = OCFWifi::getEpochTime();
-    log_d("%s detected.", cat.name);
-    // "Cat looks " + direction + ": " + up to 29 characters of name
-    char message[64];
-    snprintf(message, sizeof(message), "Cat looks %s: %s", writeDirection(direction), cat.name);
-    OCFMQTT::sendMessage("activity", message);
-    if (direction == OCFDirection::IN){
-        log_d("Cat entering has state: %d (cat), %d (global)",cat.allow_in, OCFState::config.allow_in);
-        if (cat.allow_in == true && OCFState::config.allow_in == true) return true;
-    }else{
-        log_d("Cat leaving has state: %d (cat), %d (global)",cat.allow_out, OCFState::config.allow_out);
-        if (cat.allow_out == true && OCFState::config.allow_out == true) return true;
-    }
-    return false;
+    return allowed;
 }
 
 void OCFStateMachine::readRFID(unsigned long long tag){
     rfidTag = tag;
     lastRFID = millis();
+    tagPending = true;
 }

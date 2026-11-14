@@ -12,6 +12,10 @@ struct OCFConfig{
 
 class OCFState{
     public:
+        struct Guard : OCFMutexGuard {
+            Guard() : OCFMutexGuard(mutex) {}
+        };
+        inline static SemaphoreHandle_t mutex = xSemaphoreCreateRecursiveMutex();
         inline static std::map<unsigned long long, OCFCat> cats;
         inline static OCFConfig config;
         static void saveCats();

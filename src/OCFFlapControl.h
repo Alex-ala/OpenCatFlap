@@ -7,6 +7,8 @@
 #include <OCFConfig.h>
 #include <OCFCat.h>
 #include <OCFRFID.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 /*  NEW IDEAS
 std::queue<const char*> activityLog;
@@ -23,14 +25,17 @@ Replace FlapState with OCFConfig:
 class OCFFlapControl
 {
 private:
-    inline static OCFStateMachine *stateMachineInside;
-    inline static OCFStateMachine *stateMachineOutside;
+    inline static OCFStateMachine *stateMachineInward;
+    inline static OCFStateMachine *stateMachineOutward;
+    inline static SemaphoreHandle_t loop_mutex = xSemaphoreCreateRecursiveMutex();
 
 public:
     static void init();
     static void deinit();
     static void loop(void *parameters);
-    static OCFMachineStates getInsideState();
-    static OCFMachineStates getOutsideState();
+    static OCFMachineStates getInwardState();
+    static OCFMachineStates getOutwardState();
+    static bool suspend();
+    static void resume();
 };
 #endif // __OCFFLAPCONTROL_H__

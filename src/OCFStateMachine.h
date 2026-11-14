@@ -11,9 +11,10 @@
 #include <ArxContainer.h>
 #include <OCFCat.h>
 #include <OCFRFID.h>
+#include <vector>
 
 /*
-There will be two of these statemachines. One for inside, one for outside.
+There will be two of these statemachines. One for inward transits (outside PIR, outside RFID, inside lock), one for outward transits (inside PIR, inside RFID, outside lock).
 A machine is wihtin a state and relying on the update() function to be called regularely. This then executes the correct update method for its current state.
 
 The machine has 3 states.
@@ -51,11 +52,13 @@ private:
     OCFMachineStates currentState;
     const OCFDirection direction;
     bool servoAttached;
-    uint64_t lastMotion;
-    uint64_t lastRFID;
-    uint64_t lastRead;
+    uint32_t lastMotion;
+    uint32_t lastRFID;
+    uint32_t lastRead;
     unsigned long long rfidTag;
     bool rfidReading;
+    bool tagPending;
+    std::vector<unsigned long long> reportedTags;
     const char * directionName;
 
     int pin_motion;
@@ -63,6 +66,8 @@ private:
     int pin_rfid_clk;
     int pin_rfid_dmod;
     bool checkTag(unsigned long long id);
+    bool takePendingTag();
+    bool motionDetected();
 
     void updateIdle();
     void updateReading();

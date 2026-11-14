@@ -12,128 +12,128 @@
 
 void OCFLock::init(){
     if (initialized) return;
-    if (!servoIn.attach(OCF_SERVO_IN_PIN, OCF_SERVO_IN_CHANNEL))
-        log_e("Failed to attach servo in on pin %d", OCF_SERVO_IN_PIN);
-    if (!servoOut.attach(OCF_SERVO_OUT_PIN, OCF_SERVO_OUT_CHANNEL))
-        log_e("Failed to attach servo out on pin %d", OCF_SERVO_OUT_PIN);
+    if (!servoInside.attach(OCF_SERVO_INSIDE_PIN, OCF_SERVO_INSIDE_CHANNEL))
+        log_e("Failed to attach servo inside on pin %d", OCF_SERVO_INSIDE_PIN);
+    if (!servoOutside.attach(OCF_SERVO_OUTSIDE_PIN, OCF_SERVO_OUTSIDE_CHANNEL))
+        log_e("Failed to attach servo outside on pin %d", OCF_SERVO_OUTSIDE_PIN);
     initialized = true;
-    armedIn = true;
-    armedOut = true;
+    armedInside = true;
+    armedOutside = true;
     // Both servos are driving now: move them to LOCKED and park them there.
     disableServo(OCFDirection::BOTH);
 }
 
-void OCFLock::moveServoIn(int angle){
-    if (!armedIn){
-        log_d("Servo in parked, ignoring move to %d", angle);
+void OCFLock::moveServoInside(int angle){
+    if (!armedInside){
+        log_d("Servo inside parked, ignoring move to %d", angle);
         return;
     }
-    log_d("Moving servo in to %d", angle);
-    servoIn.write(angle);
+    log_d("Moving servo inside to %d", angle);
+    servoInside.write(angle);
 }
-void OCFLock::moveServoOut(int angle){
-    if (!armedOut){
-        log_d("Servo out parked, ignoring move to %d", angle);
+void OCFLock::moveServoOutside(int angle){
+    if (!armedOutside){
+        log_d("Servo outside parked, ignoring move to %d", angle);
         return;
     }
-    log_d("Moving servo out to %d", angle);
-    servoOut.write(angle);
+    log_d("Moving servo outside to %d", angle);
+    servoOutside.write(angle);
 }
 void OCFLock::enableServo(OCFDirection direction){
     if (direction == OCFDirection::BOTH)
     {
-        enableServo(OCFDirection::IN);
-        enableServo(OCFDirection::OUT);
+        enableServo(OCFDirection::INWARD);
+        enableServo(OCFDirection::OUTWARD);
         return;
     }
     if (!initialized) init();
 
-    if (direction == OCFDirection::IN)
+    if (direction == OCFDirection::INWARD)
     {
-        if (armedIn) return; // already driving, re-attaching would only reconfigure the timer
-        log_d("Enable servo in and lock it");
+        if (armedInside) return; // already driving, re-attaching would only reconfigure the timer
+        log_d("Enable servo inside and lock it");
         // Re-binds the pin to the channel this instance already owns. No allocation.
-        servoIn.attach(OCF_SERVO_IN_PIN, OCF_SERVO_IN_CHANNEL);
-        armedIn = true;
-        lock(OCFDirection::IN);
-    }else if (direction == OCFDirection::OUT)
+        servoInside.attach(OCF_SERVO_INSIDE_PIN, OCF_SERVO_INSIDE_CHANNEL);
+        armedInside = true;
+        lock(OCFDirection::INWARD);
+    }else if (direction == OCFDirection::OUTWARD)
     {
-        if (armedOut) return;
-        log_d("Enable servo out and lock it");
-        servoOut.attach(OCF_SERVO_OUT_PIN, OCF_SERVO_OUT_CHANNEL);
-        armedOut = true;
-        lock(OCFDirection::OUT);
+        if (armedOutside) return;
+        log_d("Enable servo outside and lock it");
+        servoOutside.attach(OCF_SERVO_OUTSIDE_PIN, OCF_SERVO_OUTSIDE_CHANNEL);
+        armedOutside = true;
+        lock(OCFDirection::OUTWARD);
     }
 }
 void OCFLock::disableServo(OCFDirection direction){
     if (direction == OCFDirection::BOTH)
     {
-        if (!armedIn && !armedOut) return;
+        if (!armedInside && !armedOutside) return;
         lock(OCFDirection::BOTH);
         delay(OCF_SERVO_TRAVEL_MS); // one wait covers both servos
-        park(OCFDirection::IN);
-        park(OCFDirection::OUT);
+        park(OCFDirection::INWARD);
+        park(OCFDirection::OUTWARD);
         return;
     }
-    if (direction == OCFDirection::IN && !armedIn) return;
-    if (direction == OCFDirection::OUT && !armedOut) return;
+    if (direction == OCFDirection::INWARD && !armedInside) return;
+    if (direction == OCFDirection::OUTWARD && !armedOutside) return;
     lock(direction);
     delay(OCF_SERVO_TRAVEL_MS); // the servo needs to actually get there before we cut the pulses
     park(direction);
 }
 void OCFLock::park(OCFDirection direction){
-    if (direction == OCFDirection::IN)
+    if (direction == OCFDirection::INWARD)
     {
-        log_d("Park servo in");
-        servoIn.detach(); // ledcDetachPin only, the channel stays ours
-        pinMode(OCF_SERVO_IN_PIN, OUTPUT);
-        digitalWrite(OCF_SERVO_IN_PIN, LOW); // hold the signal line quiet instead of floating
-        armedIn = false;
-    }else if (direction == OCFDirection::OUT)
+        log_d("Park servo inside");
+        servoInside.detach(); // ledcDetachPin only, the channel stays ours
+        pinMode(OCF_SERVO_INSIDE_PIN, OUTPUT);
+        digitalWrite(OCF_SERVO_INSIDE_PIN, LOW); // hold the signal line quiet instead of floating
+        armedInside = false;
+    }else if (direction == OCFDirection::OUTWARD)
     {
-        log_d("Park servo out");
-        servoOut.detach();
-        pinMode(OCF_SERVO_OUT_PIN, OUTPUT);
-        digitalWrite(OCF_SERVO_OUT_PIN, LOW);
-        armedOut = false;
+        log_d("Park servo outside");
+        servoOutside.detach();
+        pinMode(OCF_SERVO_OUTSIDE_PIN, OUTPUT);
+        digitalWrite(OCF_SERVO_OUTSIDE_PIN, LOW);
+        armedOutside = false;
     }
 }
 void OCFLock::lock(OCFDirection direction){
-    if (direction == OCFDirection::IN)
+    if (direction == OCFDirection::INWARD)
     {
-        log_d("Lock in");
-        moveServoIn(OCF_SERVO_IN_LOCKED);
-        lockedIn = true;
-    }else if (direction == OCFDirection::OUT)
+        log_d("Lock inward");
+        moveServoInside(OCF_SERVO_INSIDE_LOCKED);
+        lockedInside = true;
+    }else if (direction == OCFDirection::OUTWARD)
     {
-        log_d("Lock out");
-        moveServoOut(OCF_SERVO_OUT_LOCKED);
-        lockedOut = true;
+        log_d("Lock outward");
+        moveServoOutside(OCF_SERVO_OUTSIDE_LOCKED);
+        lockedOutside = true;
     }else if (direction == OCFDirection::BOTH)
     {
-        lock(OCFDirection::IN);
-        lock(OCFDirection::OUT);
+        lock(OCFDirection::INWARD);
+        lock(OCFDirection::OUTWARD);
     }
 }
 void OCFLock::unlock(OCFDirection direction){
-    if (direction == OCFDirection::IN)
+    if (direction == OCFDirection::INWARD)
     {
-        log_d("Unlock in");
-        moveServoIn(OCF_SERVO_IN_UNLOCKED);
-        lockedIn = false;
-    }else if (direction == OCFDirection::OUT)
+        log_d("Unlock inward");
+        moveServoInside(OCF_SERVO_INSIDE_UNLOCKED);
+        lockedInside = false;
+    }else if (direction == OCFDirection::OUTWARD)
     {
-        log_d("Unlock out");
-        moveServoOut(OCF_SERVO_OUT_UNLOCKED);
-        lockedOut = false;
+        log_d("Unlock outward");
+        moveServoOutside(OCF_SERVO_OUTSIDE_UNLOCKED);
+        lockedOutside = false;
     }else if (direction == OCFDirection::BOTH)
     {
-        unlock(OCFDirection::IN);
-        unlock(OCFDirection::OUT);
+        unlock(OCFDirection::INWARD);
+        unlock(OCFDirection::OUTWARD);
     }
 }
 
-bool OCFLock::isLockedOut(){ return lockedOut;}
-bool OCFLock::isLockedIn(){ return lockedIn;}
-bool OCFLock::isArmedIn(){ return armedIn;}
-bool OCFLock::isArmedOut(){ return armedOut;}
+bool OCFLock::isLockedOutside(){ return lockedOutside;}
+bool OCFLock::isLockedInside(){ return lockedInside;}
+bool OCFLock::isArmedInside(){ return armedInside;}
+bool OCFLock::isArmedOutside(){ return armedOutside;}

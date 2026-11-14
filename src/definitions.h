@@ -1,14 +1,14 @@
 #define OCF_MAX_JSON_SIZE 1500
 #define OCF_MAX_FILE_READ_SIZE 8192
 
-#define OCF_SERVO_IN_PIN D10
-#define OCF_SERVO_IN_CHANNEL 0
-#define OCF_SERVO_IN_LOCKED 35
-#define OCF_SERVO_IN_UNLOCKED 64
-#define OCF_SERVO_OUT_PIN A4
-#define OCF_SERVO_OUT_CHANNEL 1
-#define OCF_SERVO_OUT_LOCKED 65
-#define OCF_SERVO_OUT_UNLOCKED 30
+#define OCF_SERVO_INSIDE_PIN D10
+#define OCF_SERVO_INSIDE_CHANNEL 0
+#define OCF_SERVO_INSIDE_LOCKED 35
+#define OCF_SERVO_INSIDE_UNLOCKED 64
+#define OCF_SERVO_OUTSIDE_PIN A4
+#define OCF_SERVO_OUTSIDE_CHANNEL 1
+#define OCF_SERVO_OUTSIDE_LOCKED 65
+#define OCF_SERVO_OUTSIDE_UNLOCKED 30
 
 // Time a DSM44 needs to reach the target angle before we may cut the pulse train.
 #define OCF_SERVO_TRAVEL_MS 300
@@ -17,6 +17,8 @@
 #define OCF_MOTION_INSIDE_PIN D5
 #define OCF_MOTION_OUTSIDE_PIN A6
 #define OCF_MOTION_DELAY 200
+#define OCF_MOTION_TIMEOUT_MS 10000
+#define OCF_UNLOCK_TAG_TIMEOUT_MS 5000
 
 // TODO: FlapIR can see through transparent PETG
 #define OCF_FLAPIR_OUTSIDE_PIN A5
@@ -43,10 +45,22 @@
 #define OCF_RFID_PCNT_LIMIT 30000
 // Dwell time on one antenna before switching, when both readers are enabled.
 #define OCF_RFID_SWITCH_MS 1000
+// EM4095 Tset is 35 ms max from SHD low until the PLL is locked to the antenna resonance.
+#define OCF_RFID_SETTLE_MS 50
+#define OCF_RFID_FREQ_WINDOW_MS 500
+// The free-running PCNT wraps after OCF_RFID_PCNT_LIMIT edges (~220 ms at 134 kHz); a longer
+// gap between counter reads may have lost a wrap, so the frequency window restarts.
+#define OCF_RFID_MAX_GAP_US 150000
 
 #define OCF_DEBUG_PIN D20
 
 #define OCF_DEFAULT_NTP_SERVER "pool.ntp.org"
+
+#define OCF_OTA_VALIDATE_MS 60000 // a new image that does not survive this long is rolled back
+
+#define OCF_MQTT_QUEUE_LENGTH 16
+#define OCF_MQTT_POLL_MS 50
+#define OCF_MQTT_RETRY_MS 30000
 
 #define OCF_MQTT_CA_PATH "/mqtt_ca"
 #define OCF_MQTT_CERT_PATH "/mqtt_cert"

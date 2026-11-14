@@ -1,0 +1,10 @@
+{
+  "name": "OCFNativeMocks",
+  "version": "0.1.0",
+  "description": "Host-side fakes of the Arduino-ESP32 core, ESP-IDF drivers and network libraries used by OpenCatFlap",
+  "platforms": "native",
+  "build": {
+    "includeDir": "src",
+    "srcDir": "src"
+  }
+}

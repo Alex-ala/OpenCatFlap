@@ -4,6 +4,9 @@
 #include <OCFWebserver.h>
 #include <OCFFlapControl.h>
 #include <OCFMQTT.h>
+#include <esp_ota_ops.h>
+
+extern "C" bool verifyRollbackLater() { return true; }
 
 void setup() {
   Serial.begin(9600);
@@ -26,4 +29,11 @@ void setup() {
 }
 
 void loop() {
+  static bool app_validated = false;
+  if (!app_validated && millis() > OCF_OTA_VALIDATE_MS) {
+    esp_ota_mark_app_valid_cancel_rollback();
+    app_validated = true;
+    log_d("Marked app valid");
+  }
+  delay(1000);
 }

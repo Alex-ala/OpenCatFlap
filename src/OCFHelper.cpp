@@ -2,10 +2,10 @@
 
 OCFDirection parseDirection(String direction)
 {
-    if (direction == "in") return OCFDirection::IN;
-    if (direction == "out") return OCFDirection::OUT;
+    if (direction == "in") return OCFDirection::INWARD;
+    if (direction == "out") return OCFDirection::OUTWARD;
     if (direction == "both") return OCFDirection::BOTH;
-    log_d("Failed to parse direction %s", direction);
+    log_d("Failed to parse direction %s", direction.c_str());
     return OCFDirection::NONE;
 }
 
@@ -29,9 +29,9 @@ size_t copyString(char *dest, size_t dest_size, const char *src)
 }
 
 const char* writeDirection(OCFDirection dir){
-    if (dir == OCFDirection::IN){
+    if (dir == OCFDirection::INWARD){
         return "in";
-    }else if (dir == OCFDirection::OUT){
+    }else if (dir == OCFDirection::OUTWARD){
         return "out";
     }else if (dir == OCFDirection::BOTH){
         return "both";
