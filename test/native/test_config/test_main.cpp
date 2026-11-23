@@ -290,6 +290,21 @@ void test_get_state_json_shape()
     TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["hz"].as<int>());
     TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["hz"].as<int>());
     TEST_ASSERT_FALSE(doc["rfid"]["outside"]["age_ms"].is<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["edges"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["glitches"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["headers"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["frames"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["crc_errors"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["inside"]["repaired"].as<int>());
+    TEST_ASSERT_TRUE(doc["rfid"]["inside"]["repaired"].is<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["edges"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["glitches"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["headers"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["frames"].as<int>());
+    TEST_ASSERT_EQUAL(0, doc["rfid"]["outside"]["crc_errors"].as<int>());
+    TEST_ASSERT_TRUE(doc["rfid"]["inside"]["frames"].is<int>());
+    std::string hist = doc["rfid"]["outside"]["hist"].as<std::string>();
+    TEST_ASSERT_EQUAL(OCF_RFID_HIST_BINS - 1, std::count(hist.begin(), hist.end(), ','));
 }
 
 void test_state_json_reports_measured_frequency()

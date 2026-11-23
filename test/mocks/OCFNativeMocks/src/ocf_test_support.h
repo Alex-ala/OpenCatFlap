@@ -76,6 +76,7 @@ namespace ocf_test
             reader->frequency_hz = 0;
             reader->measured_ms = 0;
             reader->last_update_us = 0;
+            reader->clearPending();
         }
 
         OCFState::cats.clear();

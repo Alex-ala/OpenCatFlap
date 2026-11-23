@@ -35,7 +35,27 @@
 #define OCF_RFID_INSIDE_CLK D3
 #define OCF_RFID_INSIDE_EN A2 // LOW to enable
 
-#define OCF_RFID_BIT_CYCLE_THRESHOLD 24
+// FDX-B runs at RF/32, so one half bit is 16 carrier cycles. DMOD intervals are rounded to
+// whole half bits, which puts the short/long boundary at 24 cycles.
+#define OCF_RFID_HALF_BIT_CYCLES 16
+// Longest DMOD interval, in half bits, still treated as dropped pulses rather than lost signal.
+// The tag is clocked by the carrier, so gap lengths stay exact; bits inside become unknown.
+#define OCF_RFID_MAX_GAP_HALF_BITS 256
+// DMOD intervals buffered between the ISR and the decoder (~160 ms at 6300 edges/s).
+#define OCF_RFID_RING_SIZE 1024
+// Bit votes are halved every this many frames so a different tag can take over.
+#define OCF_RFID_HISTORY_FRAMES 4
+// Decode attempts run every this many bits once a full frame of bits is in.
+#define OCF_RFID_ATTEMPT_BITS 32
+// Of the 24 fixed header and separator bits, this many must match, none may conflict.
+#define OCF_RFID_MIN_STRUCTURE_BITS 20
+// Unknown CRC-covered bits tried exhaustively. CRC-16 detects all errors of up to 3 bits,
+// so 4 keeps a wrong guess passing the CRC at about 2^-16 per frame.
+#define OCF_RFID_MAX_GUESS_BITS 4
+// DMOD intervals below this many carrier cycles are counted as noise glitches (half a short pulse).
+#define OCF_RFID_GLITCH_CYCLES 8
+// DMOD interval histogram bins, one per carrier cycle; the last bin collects all longer intervals.
+#define OCF_RFID_HIST_BINS 64
 // Clock edges are counted by PCNT. Filter is in APB (80 MHz) cycles: 100 = 1.25us, which
 // rejects glitches while passing the 3.73us half period of the 134 kHz carrier.
 // Reflected CRC-16/CCITT (Kermit) polynomial, init 0x0000, covering the first 8 data

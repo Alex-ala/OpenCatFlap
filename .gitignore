@@ -10,3 +10,4 @@ cad/opencatflap/*-backups**
 cad/opencatflap/fp-info-cache
 cad/opencatflap/*.bak
 cad/opencatflap/Manufacturing_Output**
+cad/*.sc.bak

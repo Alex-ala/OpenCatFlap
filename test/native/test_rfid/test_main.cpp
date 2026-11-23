@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <ocf_test_support.h>
 
 using namespace ocf_test;
@@ -33,8 +34,9 @@ void test_capture_decodes_to_known_tag()
 void test_capture_passes_crc()
 {
     std::vector<bool> frame = bits(CAPTURED_FRAME);
-    for (int i = 0; i < 128; i++) OCFRFID::inside->data[i] = frame[i];
-    TEST_ASSERT_TRUE(OCFRFID::inside->checkFrame());
+    uint8_t raw[128];
+    for (int i = 0; i < 128; i++) raw[i] = frame[i];
+    TEST_ASSERT_TRUE(OCFRFID::checkFrame(raw));
 }
 
 void test_crc_rejects_any_single_flipped_data_bit()
@@ -44,9 +46,10 @@ void test_crc_rejects_any_single_flipped_data_bit()
         for (int p = 0; p < 8; p++)
         {
             int index = 11 + block * 9 + p;
-            for (int i = 0; i < 128; i++) OCFRFID::inside->data[i] = frame[i];
-            OCFRFID::inside->data[index] = !OCFRFID::inside->data[index];
-            TEST_ASSERT_FALSE_MESSAGE(OCFRFID::inside->checkFrame(), std::to_string(index).c_str());
+            uint8_t raw[128];
+            for (int i = 0; i < 128; i++) raw[i] = frame[i];
+            raw[index] = !raw[index];
+            TEST_ASSERT_FALSE_MESSAGE(OCFRFID::checkFrame(raw), std::to_string(index).c_str());
         }
 }
 
@@ -55,9 +58,10 @@ void test_frame_rejected_when_a_separator_bit_is_missing()
     std::vector<bool> frame = bits(CAPTURED_FRAME);
     for (int block = 0; block < 13; block++)
     {
-        for (int i = 0; i < 128; i++) OCFRFID::inside->data[i] = frame[i];
-        OCFRFID::inside->data[11 + block * 9 + 8] = 0;
-        TEST_ASSERT_FALSE(OCFRFID::inside->checkFrame());
+        uint8_t raw[128];
+        for (int i = 0; i < 128; i++) raw[i] = frame[i];
+        raw[11 + block * 9 + 8] = 0;
+        TEST_ASSERT_FALSE(OCFRFID::checkFrame(raw));
     }
 }
 
@@ -252,7 +256,7 @@ void test_decoder_tolerates_carrier_jitter()
 void test_short_long_threshold_boundary()
 {
     OCFRFID::enable(OCFDirection::INWARD);
-    feed_outside(encode(bits(CAPTURED_FRAME), OCF_RFID_BIT_CYCLE_THRESHOLD - 1, OCF_RFID_BIT_CYCLE_THRESHOLD));
+    feed_outside(encode(bits(CAPTURED_FRAME), OCF_RFID_HALF_BIT_CYCLES * 3 / 2 - 1, OCF_RFID_HALF_BIT_CYCLES * 3 / 2));
     OCFRFID::process();
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
 }
@@ -274,6 +278,7 @@ void test_back_to_back_frames_are_all_reported()
     for (int i = 0; i < 3; i++)
         for (int16_t e : encode(bits(CAPTURED_FRAME))) edges.push_back(e);
     feed_outside(edges);
+    OCFRFID::outside->decodePending();
     TEST_ASSERT_EQUAL(3, uxQueueMessagesWaiting(OCFRFID::tag_queue));
 }
 
@@ -389,7 +394,11 @@ void test_disable_both_powers_everything_down()
 void test_queue_overflow_drops_without_crashing()
 {
     OCFRFID::enable(OCFDirection::INWARD);
-    for (int i = 0; i < 12; i++) feed_outside(encode(bits(CAPTURED_FRAME)));
+    for (int i = 0; i < 12; i++)
+    {
+        feed_outside(encode(bits(CAPTURED_FRAME)));
+        OCFRFID::outside->decodePending();
+    }
     TEST_ASSERT_EQUAL(8, uxQueueMessagesWaiting(OCFRFID::tag_queue));
     OCFRFID::process();
     TEST_ASSERT_EQUAL(0, uxQueueMessagesWaiting(OCFRFID::tag_queue));
@@ -402,6 +411,277 @@ void test_process_logs_read_to_serial()
     feed_outside(encode(bits(CAPTURED_FRAME)));
     OCFRFID::process();
     TEST_ASSERT_NOT_EQUAL(std::string::npos, Serial.output.find("RFID read: 900158002010860"));
+}
+
+void test_stats_count_valid_frame()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    feed_outside(edges);
+    OCFRFID::outside->decodePending();
+    OCFRFIDStats st = OCFRFID::outsideStats();
+    TEST_ASSERT_EQUAL(edges.size(), st.edges);
+    TEST_ASSERT_EQUAL(0, st.glitches);
+    TEST_ASSERT_EQUAL(1, st.headers);
+    TEST_ASSERT_EQUAL(1, st.frames);
+    TEST_ASSERT_EQUAL(0, st.crc_errors);
+}
+
+void test_stats_count_crc_error()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    std::vector<bool> frame = bits(CAPTURED_FRAME);
+    frame[20] = !frame[20];
+    feed_outside(encode(frame));
+    OCFRFID::outside->decodePending();
+    OCFRFIDStats st = OCFRFID::outsideStats();
+    TEST_ASSERT_EQUAL(1, st.headers);
+    TEST_ASSERT_EQUAL(0, st.frames);
+    TEST_ASSERT_EQUAL(1, st.crc_errors);
+}
+
+void test_stats_count_glitches()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside({2, OCF_RFID_GLITCH_CYCLES - 1, OCF_RFID_GLITCH_CYCLES, SHORT_EDGE, LONG_EDGE});
+    OCFRFIDStats st = OCFRFID::outsideStats();
+    TEST_ASSERT_EQUAL(5, st.edges);
+    TEST_ASSERT_EQUAL(2, st.glitches);
+    TEST_ASSERT_EQUAL(0, st.headers);
+}
+
+void test_stats_histogram_bins_intervals()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside({SHORT_EDGE, SHORT_EDGE, LONG_EDGE, OCF_RFID_HIST_BINS - 1, OCF_RFID_HIST_BINS + 50});
+    OCFRFIDStats st = OCFRFID::outsideStats();
+    TEST_ASSERT_EQUAL(2, st.hist[SHORT_EDGE]);
+    TEST_ASSERT_EQUAL(1, st.hist[LONG_EDGE]);
+    TEST_ASSERT_EQUAL(2, st.hist[OCF_RFID_HIST_BINS - 1]);
+    TEST_ASSERT_EQUAL(0, st.hist[0]);
+}
+
+void test_stats_are_per_reader_and_survive_disable()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(encode(bits(CAPTURED_FRAME)));
+    OCFRFID::disable(OCFDirection::INWARD);
+    OCFRFID::outside->decodePending();
+    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().frames);
+    TEST_ASSERT_EQUAL(0, OCFRFID::insideStats().edges);
+    OCFRFID::enable(OCFDirection::OUTWARD);
+    feed_inside({SHORT_EDGE, SHORT_EDGE});
+    TEST_ASSERT_EQUAL(2, OCFRFID::insideStats().edges);
+    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().frames);
+}
+
+static uint32_t lcg_state = 1;
+static uint32_t lcg()
+{
+    lcg_state = lcg_state * 1664525u + 1013904223u;
+    return lcg_state >> 8;
+}
+
+static std::vector<int16_t> drop_pulses(const std::vector<int16_t> &edges, const std::vector<int> &pulse_indices)
+{
+    std::vector<int16_t> out;
+    for (size_t i = 0; i < edges.size(); i++)
+    {
+        bool drop = !out.empty() && i + 1 < edges.size() &&
+                    std::find(pulse_indices.begin(), pulse_indices.end(), (int)i) != pulse_indices.end();
+        if (drop)
+        {
+            out.back() += edges[i] + edges[i + 1];
+            i++;
+        }
+        else
+            out.push_back(edges[i]);
+    }
+    return out;
+}
+
+static std::vector<int16_t> drop_random_short_pulses(const std::vector<int16_t> &edges, uint32_t per_mille)
+{
+    std::vector<int16_t> out;
+    for (size_t i = 0; i < edges.size(); i++)
+    {
+        bool drop = !out.empty() && i + 1 < edges.size() && edges[i] < OCF_RFID_HALF_BIT_CYCLES * 3 / 2 &&
+                    lcg() % 1000 < per_mille;
+        if (drop)
+        {
+            out.back() += edges[i] + edges[i + 1];
+            i++;
+        }
+        else
+            out.push_back(edges[i]);
+    }
+    return out;
+}
+
+static int count_units(const std::vector<int16_t> &edges, int units)
+{
+    int n = 0;
+    for (int16_t e : edges)
+        if ((e + OCF_RFID_HALF_BIT_CYCLES / 2) / OCF_RFID_HALF_BIT_CYCLES == units) n++;
+    return n;
+}
+
+static std::vector<int> short_pulses_between(const std::vector<int16_t> &edges, int before, int after)
+{
+    std::vector<int> out;
+    for (size_t i = 1; i + 1 < edges.size(); i++)
+        if (i > 30 && edges[i] == SHORT_EDGE && edges[i - 1] == before && edges[i + 1] == after) out.push_back(i);
+    return out;
+}
+
+void test_dropped_pulse_between_zeros_is_recovered()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int> candidates = short_pulses_between(edges, SHORT_EDGE, SHORT_EDGE);
+    std::vector<int> drops;
+    for (size_t k = 0; k < candidates.size(); k += 4)
+        if (drops.empty() || candidates[k] > drops.back() + 2) drops.push_back(candidates[k]);
+    std::vector<int16_t> damaged = drop_pulses(edges, drops);
+    TEST_ASSERT_GREATER_THAN(3, count_units(damaged, 3));
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(damaged);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+    TEST_ASSERT_EQUAL(0, OCFRFID::outsideStats().repaired);
+}
+
+void test_old_decoder_failure_case_dropped_header_pulse()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int16_t> damaged = drop_pulses(edges, {5});
+    TEST_ASSERT_EQUAL(1, count_units(damaged, 3));
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(damaged);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+}
+
+void test_ambiguous_gap_is_resolved_by_crc()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int> candidates = short_pulses_between(edges, SHORT_EDGE, LONG_EDGE);
+    TEST_ASSERT_GREATER_OR_EQUAL(2, candidates.size());
+    std::vector<int16_t> damaged = drop_pulses(edges, {candidates[0], candidates[candidates.size() - 1]});
+    TEST_ASSERT_EQUAL(2, count_units(damaged, 4));
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(damaged);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().repaired);
+}
+
+void test_repeats_are_combined_when_one_frame_is_not_enough()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int> candidates = short_pulses_between(edges, SHORT_EDGE, LONG_EDGE);
+    std::vector<int> others = short_pulses_between(edges, LONG_EDGE, SHORT_EDGE);
+    candidates.insert(candidates.end(), others.begin(), others.end());
+    std::sort(candidates.begin(), candidates.end());
+    std::vector<int> first;
+    std::vector<int> second;
+    for (size_t k = 0; k < candidates.size(); k++)
+    {
+        std::vector<int> &target = (k / 6) % 2 ? second : first;
+        if (target.empty() || candidates[k] > target.back() + 2) target.push_back(candidates[k]);
+    }
+    std::vector<int16_t> a = drop_pulses(edges, first);
+    std::vector<int16_t> b = drop_pulses(edges, second);
+    TEST_ASSERT_GREATER_THAN(OCF_RFID_MAX_GUESS_BITS, count_units(a, 4));
+    TEST_ASSERT_GREATER_THAN(OCF_RFID_MAX_GUESS_BITS, count_units(b, 4));
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(a);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(0, inward->rfidTag);
+    feed_outside(b);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().repaired);
+}
+
+void test_reads_at_field_test_drop_rate()
+{
+    lcg_state = 12345;
+    std::vector<int16_t> edges;
+    for (int i = 0; i < 30; i++)
+        for (int16_t e : encode(bits(CAPTURED_FRAME))) edges.push_back(e);
+    std::vector<int16_t> damaged = drop_random_short_pulses(edges, 350);
+    int merged = 0;
+    for (int units = 3; units <= OCF_RFID_MAX_GAP_HALF_BITS; units++) merged += count_units(damaged, units);
+    TEST_ASSERT_GREATER_THAN(damaged.size() / 4, merged);
+    OCFRFID::enable(OCFDirection::INWARD);
+    for (size_t i = 0; i < damaged.size(); i += 200)
+    {
+        feed_outside(std::vector<int16_t>(damaged.begin() + i, damaged.begin() + std::min(i + 200, damaged.size())));
+        OCFRFID::process();
+    }
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+    TEST_ASSERT_GREATER_THAN(3, OCFRFID::outsideStats().frames);
+}
+
+void test_random_intervals_never_produce_a_read()
+{
+    lcg_state = 777;
+    OCFRFID::enable(OCFDirection::INWARD);
+    for (int round = 0; round < 200; round++)
+    {
+        std::vector<int16_t> edges;
+        for (int i = 0; i < 1000; i++)
+        {
+            int units = 1 + lcg() % 4;
+            edges.push_back(units * OCF_RFID_HALF_BIT_CYCLES + (int)(lcg() % 9) - 4);
+        }
+        feed_outside(edges);
+        OCFRFID::process();
+    }
+    TEST_ASSERT_FALSE(OCFRFID::outside->ring_overflow);
+    TEST_ASSERT_EQUAL(0, OCFRFID::outsideStats().frames);
+    TEST_ASSERT_EQUAL_UINT64(0, inward->rfidTag);
+}
+
+void test_long_gap_resyncs_on_next_frame()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int16_t> stream(edges.begin(), edges.begin() + 100);
+    stream.push_back(OCF_RFID_HALF_BIT_CYCLES * (OCF_RFID_MAX_GAP_HALF_BITS + 3));
+    stream.insert(stream.end(), edges.begin(), edges.end());
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(stream);
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
+}
+
+void test_glitch_drops_frame_and_next_frame_reads()
+{
+    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
+    std::vector<int16_t> stream(edges.begin(), edges.begin() + 80);
+    stream.push_back(3);
+    stream.push_back(3);
+    stream.insert(stream.end(), edges.begin() + 80, edges.end());
+    stream.insert(stream.end(), edges.begin(), edges.end());
+    OCFRFID::enable(OCFDirection::INWARD);
+    feed_outside(stream);
+    OCFRFID::outside->decodePending();
+    TEST_ASSERT_EQUAL(1, uxQueueMessagesWaiting(OCFRFID::tag_queue));
+}
+
+void test_ring_overflow_resyncs_instead_of_misdecoding()
+{
+    OCFRFID::enable(OCFDirection::INWARD);
+    std::vector<int16_t> edges;
+    while (edges.size() < OCF_RFID_RING_SIZE + 500)
+        for (int16_t e : encode(bits(CAPTURED_FRAME))) edges.push_back(e);
+    feed_outside(edges);
+    TEST_ASSERT_TRUE(OCFRFID::outside->ring_overflow);
+    OCFRFID::outside->decodePending();
+    feed_outside(encode(bits(CAPTURED_FRAME)));
+    feed_outside(encode(bits(CAPTURED_FRAME)));
+    OCFRFID::process();
+    TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
 }
 
 int main()
@@ -439,5 +719,19 @@ int main()
     RUN_TEST(test_disable_both_powers_everything_down);
     RUN_TEST(test_queue_overflow_drops_without_crashing);
     RUN_TEST(test_process_logs_read_to_serial);
+    RUN_TEST(test_stats_count_valid_frame);
+    RUN_TEST(test_stats_count_crc_error);
+    RUN_TEST(test_stats_count_glitches);
+    RUN_TEST(test_stats_histogram_bins_intervals);
+    RUN_TEST(test_stats_are_per_reader_and_survive_disable);
+    RUN_TEST(test_dropped_pulse_between_zeros_is_recovered);
+    RUN_TEST(test_old_decoder_failure_case_dropped_header_pulse);
+    RUN_TEST(test_ambiguous_gap_is_resolved_by_crc);
+    RUN_TEST(test_repeats_are_combined_when_one_frame_is_not_enough);
+    RUN_TEST(test_reads_at_field_test_drop_rate);
+    RUN_TEST(test_random_intervals_never_produce_a_read);
+    RUN_TEST(test_long_gap_resyncs_on_next_frame);
+    RUN_TEST(test_glitch_drops_frame_and_next_frame_reads);
+    RUN_TEST(test_ring_overflow_resyncs_instead_of_misdecoding);
     return UNITY_END();
 }

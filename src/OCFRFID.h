@@ -16,16 +16,29 @@ const int ID_BITS[ID_BITS_COUNT] = {52,51,50,49,48,47,45,44,43,42,41,40,39,38,36
 
 class OCFStateMachine;
 
+struct OCFRFIDStats {
+    uint32_t edges;
+    uint32_t glitches;
+    uint32_t headers;
+    uint32_t frames;
+    uint32_t repaired;
+    uint32_t crc_errors;
+    uint32_t hist[OCF_RFID_HIST_BINS];
+};
+
 struct OCFRFIDFrequency {
     uint32_t hz;
     uint32_t age_ms;
 };
 
 class OCFRFID {
-    enum OFC_RFID_STATE {
-        WAITING_FOR_HEADER,
-        READING,
-        DISABLE
+    struct Lane {
+        uint8_t phase;
+        uint32_t count;
+        uint8_t ones[128];
+        uint8_t zeros[128];
+        uint8_t last_val[128];
+        uint8_t last_known[128];
     };
     public:
         static void init(OCFStateMachine* machine_inward, OCFStateMachine* machine_outward);
@@ -34,6 +47,8 @@ class OCFRFID {
         static void process();
         static OCFRFIDFrequency insideFrequency();
         static OCFRFIDFrequency outsideFrequency();
+        static OCFRFIDStats insideStats();
+        static OCFRFIDStats outsideStats();
     private:
         static OCFRFID* outside;
         static OCFRFID* inside;
@@ -45,20 +60,29 @@ class OCFRFID {
         static void on_dmod();
         static void activate(OCFRFID* reader);
         static OCFRFID* readerFor(OCFDirection direction);
+        static uint8_t frameByte(const uint8_t* bits, int block);
+        static bool checkFrame(const uint8_t* bits);
+        static uint64_t extractBits(const uint8_t* bit_data, const int* bit_indices, int count);
 
 
         void onInterruptDmod();
         void harvest();
         void updateFrequency();
         OCFRFIDFrequency frequency();
-        void decodeEdge(int16_t clk_count, BaseType_t* higher_woken);
-        uint8_t frameByte(int block);
-        bool checkFrame();
+        OCFRFIDStats readStats();
         void setupCounter();
-        void printBitstring();
         void enable();
         void disable();
-        uint64_t extractBits(const uint8_t* bit_data, const int* bit_indices, int count);
+        void clearPending();
+        void decodePending();
+        void resetDecoder(bool reference_at_start);
+        void resetLane(Lane& lane);
+        void decodeInterval(uint16_t cycles);
+        void stepLane(Lane& lane, uint32_t from, uint32_t to);
+        void emitBit(Lane& lane, uint8_t value, bool known);
+        void attemptLane(Lane& lane);
+        static bool alignFrame(const uint8_t* val, const uint8_t* known, int* offset);
+        static bool solveFrame(const uint8_t* val, const uint8_t* known, unsigned long long* id, bool* guessed);
 
         OCFDirection direction;
         OCFStateMachine* machine;
@@ -66,11 +90,6 @@ class OCFRFID {
         int pin_dmod;
         int pin_clk;
         pcnt_unit_t pcnt_unit;
-        OFC_RFID_STATE state;
-        bool data[128];
-        int data_index;
-        bool expect_short = false;
-        int zero_counter = 0;
         bool powered = false;
         uint32_t total_edges = 0;
         uint32_t edge_mark = 0;
@@ -81,6 +100,15 @@ class OCFRFID {
         uint32_t last_update_us = 0;
         uint32_t frequency_hz = 0;
         uint32_t measured_ms = 0;
+        OCFRFIDStats stats = {};
+
+        uint16_t ring[OCF_RFID_RING_SIZE];
+        volatile uint16_t ring_head = 0;
+        volatile uint16_t ring_tail = 0;
+        volatile bool ring_overflow = false;
+        uint32_t position = 0;
+        bool have_reference = false;
+        Lane lanes[2];
 
 };
 
