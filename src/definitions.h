@@ -52,10 +52,6 @@
 // Unknown CRC-covered bits tried exhaustively. CRC-16 detects all errors of up to 3 bits,
 // so 4 keeps a wrong guess passing the CRC at about 2^-16 per frame.
 #define OCF_RFID_MAX_GUESS_BITS 4
-// DMOD intervals below this many carrier cycles are counted as noise glitches (half a short pulse).
-#define OCF_RFID_GLITCH_CYCLES 8
-// DMOD interval histogram bins, one per carrier cycle; the last bin collects all longer intervals.
-#define OCF_RFID_HIST_BINS 64
 // Clock edges are counted by PCNT. Filter is in APB (80 MHz) cycles: 100 = 1.25us, which
 // rejects glitches while passing the 3.73us half period of the 134 kHz carrier.
 // Reflected CRC-16/CCITT (Kermit) polynomial, init 0x0000, covering the first 8 data

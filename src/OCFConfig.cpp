@@ -79,21 +79,9 @@ void OCFState::saveCats() {
     doc.clear();
 }
 
-static void addReader(JsonObject obj, OCFRFIDFrequency frequency, OCFRFIDStats stats){
+static void addFrequency(JsonObject obj, OCFRFIDFrequency frequency){
     obj["hz"] = frequency.hz;
     if (frequency.hz) obj["age_ms"] = frequency.age_ms;
-    obj["edges"] = stats.edges;
-    obj["glitches"] = stats.glitches;
-    obj["headers"] = stats.headers;
-    obj["frames"] = stats.frames;
-    obj["repaired"] = stats.repaired;
-    obj["crc_errors"] = stats.crc_errors;
-    String hist;
-    for (int i = 0; i < OCF_RFID_HIST_BINS; i++) {
-        if (i) hist += ',';
-        hist += stats.hist[i];
-    }
-    obj["hist"] = hist;
 }
 
 void OCFState::getStateJSON(String& outStr){
@@ -106,8 +94,8 @@ void OCFState::getStateJSON(String& outStr){
     doc["mem_free_heap"] = esp_get_free_heap_size();
     doc["time"] = OCFWifi::getEpochTime();
     JsonObject rfid = doc["rfid"].to<JsonObject>();
-    addReader(rfid["inside"].to<JsonObject>(), OCFRFID::insideFrequency(), OCFRFID::insideStats());
-    addReader(rfid["outside"].to<JsonObject>(), OCFRFID::outsideFrequency(), OCFRFID::outsideStats());
+    addFrequency(rfid["inside"].to<JsonObject>(), OCFRFID::insideFrequency());
+    addFrequency(rfid["outside"].to<JsonObject>(), OCFRFID::outsideFrequency());
     serializeJsonPretty(doc, outStr);
     doc.clear();
 }

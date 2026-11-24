@@ -74,6 +74,26 @@ curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=cert' --data
 curl -H "Content-Type: text/plain" 'http://10.5.0.60/api/certs?name=ca' --data-binary @/home/alex/trash/ca.crt
 ```
 
+## Getting started with a new Arduino Nano ESP32
+
+A new board ships with Arduino's stock partition table, which has no `spiffs` partition. DFU uploads only replace the app, so the first flash has to be done with esptool. Otherwise the webserver fails with `File system is not mounted`.
+
+1. In `platformio.ini`, make sure `upload_protocol = esptool` is active in `[env:arduino_nano_esp32]`.
+2. Optional: put `wifi_configuration.json`, `mqtt_configuration.json` and the MQTT certificates into `data/` to have them preinstalled. They are ignored by git and can also be set later via the API.
+3. Close any serial monitor and enter bootloader mode: connect B1 to GND, press reset, then remove the connection. The board now shows up as `303a:1001` in `lsusb`.
+4. Flash the bootloader, partition table and firmware:
+   ```
+   pio run -e arduino_nano_esp32 -t upload
+   ```
+5. Flash the filesystem. If the board left bootloader mode, repeat step 3 first. This replaces everything on the filesystem with the contents of `data/`.
+   ```
+   pio run -e arduino_nano_esp32 -t uploadfs
+   ```
+6. Press reset and wait about 20 seconds for the flap to boot.
+7. Without a Wifi config, connect to the open "OpenCatFlap" wifi and open http://192.168.4.1. Configure Wifi and MQTT as described above.
+
+The partition table only has to be flashed once per board. Afterwards, firmware updates can use DFU (comment out `upload_protocol = esptool`) or the `arduino_nano_esp32_ota` environment. Filesystem uploads always need esptool.
+
 **Future Improvements:**
 - NE555 is too inconsistant due to 5% tolerance capacitor with bad temperature coefficient
 - Tuning condensators for EM4095 have to be bigger to allow more jiggle-room when building an antenna

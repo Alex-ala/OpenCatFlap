@@ -31,7 +31,6 @@ void OCFRFID::init(OCFStateMachine* machine_inward, OCFStateMachine* machine_out
     outside->pin_dmod = OCF_RFID_OUTSIDE_DMOD;
     outside->pin_clk = OCF_RFID_OUTSIDE_CLK;
     outside->pcnt_unit = PCNT_UNIT_0;
-    outside->stats = {};
     outside->clearPending();
     pinMode(outside->pin_power, OUTPUT);
     digitalWrite(outside->pin_power, HIGH); // Disable initially
@@ -42,7 +41,6 @@ void OCFRFID::init(OCFStateMachine* machine_inward, OCFStateMachine* machine_out
     inside->pin_dmod = OCF_RFID_INSIDE_DMOD;
     inside->pin_clk = OCF_RFID_INSIDE_CLK;
     inside->pcnt_unit = PCNT_UNIT_1;
-    inside->stats = {};
     inside->clearPending();
     pinMode(inside->pin_power, OUTPUT);
     digitalWrite(inside->pin_power, HIGH); // Disable initially
@@ -145,21 +143,6 @@ OCFRFIDFrequency OCFRFID::frequency() {
     return result;
 }
 
-OCFRFIDStats OCFRFID::readStats() {
-    portENTER_CRITICAL(&rfid_mux);
-    OCFRFIDStats result = stats;
-    portEXIT_CRITICAL(&rfid_mux);
-    return result;
-}
-
-OCFRFIDStats OCFRFID::insideStats() {
-    return inside->readStats();
-}
-
-OCFRFIDStats OCFRFID::outsideStats() {
-    return outside->readStats();
-}
-
 OCFRFIDFrequency OCFRFID::insideFrequency() {
     return inside->frequency();
 }
@@ -240,9 +223,6 @@ void OCFRFID::onInterruptDmod() {
     harvest();
     uint32_t interval = total_edges - edge_mark;
     edge_mark = total_edges;
-    stats.edges++;
-    if (interval < OCF_RFID_GLITCH_CYCLES) stats.glitches++;
-    stats.hist[interval < OCF_RFID_HIST_BINS ? interval : OCF_RFID_HIST_BINS - 1]++;
     uint16_t next = (ring_head + 1) % OCF_RFID_RING_SIZE;
     if (next == ring_tail) {
         ring_overflow = true;
@@ -377,21 +357,13 @@ void OCFRFID::attemptLane(Lane& lane) {
             frame_known[j] = slot_known[(offset + j) % 128];
         }
         unsigned long long id = 0;
-        bool guessed = false;
-        if (!solveFrame(frame_val, frame_known, &id, &guessed)) continue;
+        if (!solveFrame(frame_val, frame_known, &id)) continue;
         RfidRead read = { id, direction };
         xQueueSend(tag_queue, &read, 0);
-        stats.headers++;
-        stats.frames++;
-        if (guessed || source == 1) stats.repaired++;
         resetLane(lane);
         return;
     }
-    if (aligned && lane.count % 128 == 0) {
-        stats.headers++;
-        crc_failures++;
-        stats.crc_errors++;
-    }
+    if (aligned && lane.count % 128 == 0) crc_failures++;
 }
 
 bool OCFRFID::alignFrame(const uint8_t* val, const uint8_t* known, int* offset) {
@@ -415,7 +387,7 @@ bool OCFRFID::alignFrame(const uint8_t* val, const uint8_t* known, int* offset) 
     return best_matches >= OCF_RFID_MIN_STRUCTURE_BITS;
 }
 
-bool OCFRFID::solveFrame(const uint8_t* val, const uint8_t* known, unsigned long long* id, bool* guessed) {
+bool OCFRFID::solveFrame(const uint8_t* val, const uint8_t* known, unsigned long long* id) {
     uint8_t work[128];
     int unknown[OCF_RFID_MAX_GUESS_BITS];
     int unknowns = 0;
@@ -436,7 +408,6 @@ bool OCFRFID::solveFrame(const uint8_t* val, const uint8_t* known, unsigned long
         if (!checkFrame(work)) continue;
         uint32_t country = extractBits(work, COUNTRY_BITS, COUNTRY_BITS_COUNT);
         *id = extractBits(work, ID_BITS, ID_BITS_COUNT) + country * 1000000000000ULL;
-        *guessed = unknowns > 0;
         return true;
     }
     return false;

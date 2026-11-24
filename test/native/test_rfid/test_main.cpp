@@ -413,68 +413,6 @@ void test_process_logs_read_to_serial()
     TEST_ASSERT_NOT_EQUAL(std::string::npos, Serial.output.find("RFID read: 900158002010860"));
 }
 
-void test_stats_count_valid_frame()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    std::vector<int16_t> edges = encode(bits(CAPTURED_FRAME));
-    feed_outside(edges);
-    OCFRFID::outside->decodePending();
-    OCFRFIDStats st = OCFRFID::outsideStats();
-    TEST_ASSERT_EQUAL(edges.size(), st.edges);
-    TEST_ASSERT_EQUAL(0, st.glitches);
-    TEST_ASSERT_EQUAL(1, st.headers);
-    TEST_ASSERT_EQUAL(1, st.frames);
-    TEST_ASSERT_EQUAL(0, st.crc_errors);
-}
-
-void test_stats_count_crc_error()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    std::vector<bool> frame = bits(CAPTURED_FRAME);
-    frame[20] = !frame[20];
-    feed_outside(encode(frame));
-    OCFRFID::outside->decodePending();
-    OCFRFIDStats st = OCFRFID::outsideStats();
-    TEST_ASSERT_EQUAL(1, st.headers);
-    TEST_ASSERT_EQUAL(0, st.frames);
-    TEST_ASSERT_EQUAL(1, st.crc_errors);
-}
-
-void test_stats_count_glitches()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    feed_outside({2, OCF_RFID_GLITCH_CYCLES - 1, OCF_RFID_GLITCH_CYCLES, SHORT_EDGE, LONG_EDGE});
-    OCFRFIDStats st = OCFRFID::outsideStats();
-    TEST_ASSERT_EQUAL(5, st.edges);
-    TEST_ASSERT_EQUAL(2, st.glitches);
-    TEST_ASSERT_EQUAL(0, st.headers);
-}
-
-void test_stats_histogram_bins_intervals()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    feed_outside({SHORT_EDGE, SHORT_EDGE, LONG_EDGE, OCF_RFID_HIST_BINS - 1, OCF_RFID_HIST_BINS + 50});
-    OCFRFIDStats st = OCFRFID::outsideStats();
-    TEST_ASSERT_EQUAL(2, st.hist[SHORT_EDGE]);
-    TEST_ASSERT_EQUAL(1, st.hist[LONG_EDGE]);
-    TEST_ASSERT_EQUAL(2, st.hist[OCF_RFID_HIST_BINS - 1]);
-    TEST_ASSERT_EQUAL(0, st.hist[0]);
-}
-
-void test_stats_are_per_reader_and_survive_disable()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    feed_outside(encode(bits(CAPTURED_FRAME)));
-    OCFRFID::disable(OCFDirection::INWARD);
-    OCFRFID::outside->decodePending();
-    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().frames);
-    TEST_ASSERT_EQUAL(0, OCFRFID::insideStats().edges);
-    OCFRFID::enable(OCFDirection::OUTWARD);
-    feed_inside({SHORT_EDGE, SHORT_EDGE});
-    TEST_ASSERT_EQUAL(2, OCFRFID::insideStats().edges);
-    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().frames);
-}
-
 static uint32_t lcg_state = 1;
 static uint32_t lcg()
 {
@@ -547,7 +485,6 @@ void test_dropped_pulse_between_zeros_is_recovered()
     feed_outside(damaged);
     OCFRFID::process();
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
-    TEST_ASSERT_EQUAL(0, OCFRFID::outsideStats().repaired);
 }
 
 void test_old_decoder_failure_case_dropped_header_pulse()
@@ -572,7 +509,6 @@ void test_ambiguous_gap_is_resolved_by_crc()
     feed_outside(damaged);
     OCFRFID::process();
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
-    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().repaired);
 }
 
 void test_repeats_are_combined_when_one_frame_is_not_enough()
@@ -600,7 +536,6 @@ void test_repeats_are_combined_when_one_frame_is_not_enough()
     feed_outside(b);
     OCFRFID::process();
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
-    TEST_ASSERT_EQUAL(1, OCFRFID::outsideStats().repaired);
 }
 
 void test_reads_at_field_test_drop_rate()
@@ -614,13 +549,16 @@ void test_reads_at_field_test_drop_rate()
     for (int units = 3; units <= OCF_RFID_MAX_GAP_HALF_BITS; units++) merged += count_units(damaged, units);
     TEST_ASSERT_GREATER_THAN(damaged.size() / 4, merged);
     OCFRFID::enable(OCFDirection::INWARD);
+    int reads = 0;
     for (size_t i = 0; i < damaged.size(); i += 200)
     {
         feed_outside(std::vector<int16_t>(damaged.begin() + i, damaged.begin() + std::min(i + 200, damaged.size())));
+        OCFRFID::outside->decodePending();
+        reads += uxQueueMessagesWaiting(OCFRFID::tag_queue);
         OCFRFID::process();
     }
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
-    TEST_ASSERT_GREATER_THAN(3, OCFRFID::outsideStats().frames);
+    TEST_ASSERT_GREATER_THAN(3, reads);
 }
 
 void test_random_intervals_never_produce_a_read()
@@ -639,7 +577,6 @@ void test_random_intervals_never_produce_a_read()
         OCFRFID::process();
     }
     TEST_ASSERT_FALSE(OCFRFID::outside->ring_overflow);
-    TEST_ASSERT_EQUAL(0, OCFRFID::outsideStats().frames);
     TEST_ASSERT_EQUAL_UINT64(0, inward->rfidTag);
 }
 
@@ -719,11 +656,6 @@ int main()
     RUN_TEST(test_disable_both_powers_everything_down);
     RUN_TEST(test_queue_overflow_drops_without_crashing);
     RUN_TEST(test_process_logs_read_to_serial);
-    RUN_TEST(test_stats_count_valid_frame);
-    RUN_TEST(test_stats_count_crc_error);
-    RUN_TEST(test_stats_count_glitches);
-    RUN_TEST(test_stats_histogram_bins_intervals);
-    RUN_TEST(test_stats_are_per_reader_and_survive_disable);
     RUN_TEST(test_dropped_pulse_between_zeros_is_recovered);
     RUN_TEST(test_old_decoder_failure_case_dropped_header_pulse);
     RUN_TEST(test_ambiguous_gap_is_resolved_by_crc);
