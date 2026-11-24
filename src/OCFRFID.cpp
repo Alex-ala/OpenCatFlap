@@ -95,7 +95,6 @@ void OCFRFID::process() {
     inside->decodePending();
     RfidRead read;
     while (xQueueReceive(tag_queue, &read, 0) == pdTRUE) {
-        //Serial.printf("RFID read: %llu\n", read.id);
         OCFRFID *reader = readerFor(read.direction);
         if (reader && reader->machine) reader->machine->readRFID(read.id);
     }

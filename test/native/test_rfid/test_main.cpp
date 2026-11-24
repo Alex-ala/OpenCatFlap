@@ -405,14 +405,6 @@ void test_queue_overflow_drops_without_crashing()
     TEST_ASSERT_EQUAL_UINT64(CAPTURED_TAG, inward->rfidTag);
 }
 
-void test_process_logs_read_to_serial()
-{
-    OCFRFID::enable(OCFDirection::INWARD);
-    feed_outside(encode(bits(CAPTURED_FRAME)));
-    OCFRFID::process();
-    TEST_ASSERT_NOT_EQUAL(std::string::npos, Serial.output.find("RFID read: 900158002010860"));
-}
-
 static uint32_t lcg_state = 1;
 static uint32_t lcg()
 {
@@ -655,7 +647,6 @@ int main()
     RUN_TEST(test_disabling_inactive_side_keeps_active_one);
     RUN_TEST(test_disable_both_powers_everything_down);
     RUN_TEST(test_queue_overflow_drops_without_crashing);
-    RUN_TEST(test_process_logs_read_to_serial);
     RUN_TEST(test_dropped_pulse_between_zeros_is_recovered);
     RUN_TEST(test_old_decoder_failure_case_dropped_header_pulse);
     RUN_TEST(test_ambiguous_gap_is_resolved_by_crc);
